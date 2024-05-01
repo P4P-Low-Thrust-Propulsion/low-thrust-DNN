@@ -190,5 +190,5 @@ def pork_chop_plt():
 
 
 if __name__ == '__main__':
-    pol()
+    pykep()
 
