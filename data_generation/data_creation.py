@@ -92,10 +92,7 @@ class TransferGenerator:
 
             rel_dist = r_final - r_earth
             # Append the data along with delta V to the list
-            data.append({"start_pos_x": r_earth[0] / u.km,
-                         "start_pos_y": r_earth[1] / u.km,
-                         "start_pos_z": r_earth[2] / u.km,
-                         "rel_dist_x": rel_dist[0] / u.km,
+            data.append({"rel_dist_x": rel_dist[0] / u.km,
                          "rel_dist_y": rel_dist[1] / u.km,
                          "rel_dist_z": rel_dist[2] / u.km,
                          "tof": man_lambert.get_total_time().to(u.day) / u.day,
@@ -116,7 +113,7 @@ class TransferGenerator:
 
 
 # Create an instance of TransferGenerator
-transfer_gen = TransferGenerator(10000, False)
+transfer_gen = TransferGenerator(1000, False)
 
 # Generate transfer data
 transfer_gen.generate_transfers()
