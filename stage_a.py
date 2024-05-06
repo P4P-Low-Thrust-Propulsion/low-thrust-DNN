@@ -59,7 +59,8 @@ loss_fn = nn.MSELoss()
 optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.05)  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer)
-epochs_array = model_01_trainer.train(2, X_train, X_test, y_train, y_test)
+epochs_array = model_01_trainer.train(100, X_train, X_test, y_train, y_test)
+model_01_trainer.plot_training_curves()
 
 # %% Make estimates
 model_01.eval()  # turns off difference setting sin th emodel not needed evaluating/testing
