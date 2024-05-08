@@ -12,14 +12,16 @@ class DNNClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.n = 300
-        self.layer1 = nn.Linear(in_features=4, out_features=self.n)
+        self.layer1 = nn.Linear(in_features=14, out_features=self.n)
         self.layer2 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer3 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer4 = nn.Linear(in_features=self.n, out_features=3)
-        self.relu = nn.Softshrink()
+        self.layer4 = nn.Linear(in_features=self.n, out_features=self.n)
+        self.layer5 = nn.Linear(in_features=self.n, out_features=self.n)
+        self.layer6 = nn.Linear(in_features=self.n, out_features=3)
+        self.relu = nn.SELU()
 
     def forward(self, x):
-        return self.layer4(self.relu(self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))))
+        return self.layer6(self.relu(self.layer5(self.relu(self.layer4(self.relu(self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))))))))
 
 
 class ModelTrainer:
@@ -56,6 +58,7 @@ class ModelTrainer:
             self.epochs_array.append(epoch)
 
         logging.info("Training complete.")
+        return self.epochs_array
 
     def plot_training_curves(self):
         plt.figure()

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import torch.nn as nn
 
-df = pd.read_csv('data_generation/data/transfer_data.csv')
+df = pd.read_csv('data_generation/data/transfer_data_mil.csv')
 scaler = MinMaxScaler()
 
 # Fit the scaler to your data (optional, depending on the scaler)
@@ -18,7 +18,7 @@ scaler.fit(df)
 # Transform the data using the fitted scaler and keep it as a DataFrame
 df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-df_Features = df.iloc[:, :4]
+df_Features = df.iloc[:, :14]
 df_Labels = df.iloc[:, -3:]
 
 data_Features = df_Features.values
@@ -38,9 +38,6 @@ device = torch.device("cuda" if cuda_available else "mps")
 
 # %% Setting up training params
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-len(X_train), len(X_test), len(y_train), len(y_test)
 
 # %% Construct a model class that subclasses nn.Module
 torch.manual_seed(42)
@@ -63,9 +60,9 @@ epochs_array = model_01_trainer.train(100, X_train, X_test, y_train, y_test)
 model_01_trainer.plot_training_curves()
 
 # %% Make estimates
-model_01.eval()  # turns off difference setting sin th emodel not needed evaluating/testing
+model_01_trainer.model.eval()  # turns off difference setting sin th emodel not needed evaluating/testing
 with torch.inference_mode():
-    y_pred = model_01(X_test)
+    y_pred = model_01_trainer.model(X_test)  # Perform inference on GPU
 
 
 # %%
@@ -102,13 +99,13 @@ plt.legend()
 plt.show()
 
 plt.figure()
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test_scaled, axis=1)[:n], c='green', label='y_test')
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred_scaled, axis=1)[:n], c='blue', label='y_preds')
+plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test_scaled.iloc[:, -3:], axis=1)[:n], c='green', label='y_test')
+plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred_scaled.iloc[:, -3:], axis=1)[:n], c='blue', label='y_preds')
 
 # Set labels and title
 plt.xlabel('Epochs')
 plt.ylabel('Magnitude of velocity [km/s]')
-plt.title('Scatter Plot of Magnitudes unscaled')
+plt.title('Scatter Plot of Magnitudes scaled')
 plt.legend()
 plt.show()
 
