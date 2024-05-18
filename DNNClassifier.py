@@ -12,7 +12,7 @@ class DNNClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.n = 300
-        self.layer1 = nn.Linear(in_features=14, out_features=self.n)
+        self.layer1 = nn.Linear(in_features=4, out_features=self.n)
         self.layer2 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer3 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer4 = nn.Linear(in_features=self.n, out_features=self.n)

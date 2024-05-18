@@ -8,8 +8,11 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from pathlib import Path
 import torch.nn as nn
+from datetime import date
+import matplotlib as mpl
 
-df = pd.read_csv('data_generation/data/transfer_data_mil.csv')
+mpl.use('macosx')
+df = pd.read_csv('data_generation/data/transfer_data_mil2.csv')
 scaler = MinMaxScaler()
 
 # Fit the scaler to your data (optional, depending on the scaler)
@@ -18,7 +21,7 @@ scaler.fit(df)
 # Transform the data using the fitted scaler and keep it as a DataFrame
 df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-df_Features = df.iloc[:, :14]
+df_Features = df.iloc[:, :4]
 df_Labels = df.iloc[:, -3:]
 
 data_Features = df_Features.values
@@ -107,7 +110,6 @@ plt.xlabel('Epochs')
 plt.ylabel('Magnitude of velocity [km/s]')
 plt.title('Scatter Plot of Magnitudes scaled')
 plt.legend()
-plt.show()
 
 # %% Saving model
 
@@ -115,10 +117,11 @@ plt.show()
 MODEL_PATH = Path("models")
 MODEL_PATH.mkdir(parents=True, exist_ok=True)
 # create model save path
-MODEL_NAME = "LeakyRelu.pth"
+today = date.today()
+MODEL_NAME = str(today) + ".pth"
 MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
 print(f"Saving model to : {MODEL_SAVE_PATH}")
 
 # 3. SAVE THE MODEL SAVE DICT
 torch.save(obj=model_01.state_dict(), f=MODEL_SAVE_PATH)
-
+plt.show(block=True)
