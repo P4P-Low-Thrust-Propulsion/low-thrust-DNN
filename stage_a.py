@@ -21,7 +21,7 @@ scaler.fit(df)
 # Transform the data using the fitted scaler and keep it as a DataFrame
 df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-df_Features = df.iloc[:, :4]
+df_Features = df.iloc[:, :3]
 df_Labels = df.iloc[:, -3:]
 
 data_Features = df_Features.values
@@ -56,10 +56,10 @@ X_train, X_test, y_train, y_test = X_train.to(device), X_test.to(device), y_trai
 # %% Train model
 # Setting up a loss function and optimizer
 loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.05)  # lr = learning rate
+optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.025)  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer)
-epochs_array = model_01_trainer.train(100, X_train, X_test, y_train, y_test)
+epochs_array = model_01_trainer.train(50, X_train, X_test, y_train, y_test)
 model_01_trainer.plot_training_curves()
 
 # %% Make estimates

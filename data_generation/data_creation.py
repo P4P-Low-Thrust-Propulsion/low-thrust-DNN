@@ -209,9 +209,10 @@ class TransferGenerator:
         logging.info("Data Creation complete.")
         if self.flag:
             # Set view parameters
-            self.fig.show(block=True)
+            self.fig.show()
             fig = self.plotter.set_view(30 * u.deg, 260 * u.deg, distance=3 * u.km)
             fig.write_html("plots/multiple_transfers.html")
+            plt.show(block=True)
 
     def save_data_to_csv(self, filename):
         self.df.to_csv(filename, index=False)
@@ -220,8 +221,10 @@ class TransferGenerator:
     @staticmethod
     def plot_vectors_3d(r_earth, r_final, v_earth, v_final, i):
         rotated = False
+        velocity_label = "Velocity"
         if r_earth[1] == 0:
             rotated = True
+            velocity_label = "Delta-V"
 
         # Plot position and velocity vectors in 3D
         fig = plt.figure()
@@ -241,17 +244,19 @@ class TransferGenerator:
 
         # Plot Earth velocity vector at the end of the Earth position vector
         ax.quiver(r_earth[0], r_earth[1], r_earth[2], v_earth[0].value * 1e7, v_earth[1].value * 1e7,
-                  v_earth[2].value * 1e7, color='black', label='Earth Velocity')
+                  v_earth[2].value * 1e7, color='black', label='Earth ' + velocity_label)
 
         # Plot target velocity vector at the end of the target position vector
         ax.quiver(r_final[0], r_final[1], r_final[2], v_final[0] * 1e7, v_final[1] * 1e7, v_final[2] * 1e7,
-                  color='black', label='Target Velocity')
+                  color='black', label='Target ' + velocity_label)
 
         # Set limits for the axes
         ax.set_xlim([-2e8, 2e8])
         ax.set_ylim([-2e8, 2e8])
         if not rotated:
             ax.set_zlim([-2e8, 2e8])
+        else:
+            ax.set_aspect('equal', 'box')
         # Set labels and title
         ax.set_xlabel('X (km)')
         ax.set_ylabel('Y (km)')

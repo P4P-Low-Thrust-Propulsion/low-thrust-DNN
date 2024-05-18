@@ -32,7 +32,7 @@ scaler.fit(df)
 # Transform the data using the fitted scaler and keep it as a DataFrame
 df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-df_Features = df.iloc[:, :4]
+df_Features = df.iloc[:, :3]
 df_Labels = df.iloc[:, -3:]
 
 data_Features = df_Features.values
