@@ -12,25 +12,26 @@ from datetime import date
 import matplotlib as mpl
 
 mpl.use('macosx')
-df = pd.read_csv('data_generation/data/transfer_data_mil2.csv')
+df = pd.read_csv('data_generation/data/transfer_data_set2.csv')
 scaler = MinMaxScaler()
 
 # Fit the scaler to your data (optional, depending on the scaler)
-scaler.fit(df)
+#scaler.fit(df)
 
 # Transform the data using the fitted scaler and keep it as a DataFrame
-df = pd.DataFrame(scaler.transform(df), columns=df.columns)
+#df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-df_Features = df.iloc[:, :3]
-df_Labels = df.iloc[:, -3:]
+df_Features = df.iloc[:, :117]
+df_Labels = df.iloc[:, -39:]
 
 data_Features = df_Features.values
 data_Labels = df_Labels.values
 
 # Fit and transform the features
-X = torch.from_numpy(data_Features).type(torch.float)
-y = torch.from_numpy(data_Labels).type(torch.float)
-
+#X = torch.from_numpy(data_Features).type(torch.float)
+#y = torch.from_numpy(data_Labels).type(torch.float)
+X = torch.tensor(data_Features, dtype=torch.float32)
+y = torch.tensor(data_Labels, dtype=torch.float32)
 # Check if CUDA (NVIDIA GPU) is available
 cuda_available = torch.cuda.is_available()
 
@@ -55,18 +56,36 @@ X_train, X_test, y_train, y_test = X_train.to(device), X_test.to(device), y_trai
 
 # %% Train model
 # Setting up a loss function and optimizer
-loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.025)  # lr = learning rate
+loss_fn = nn.BCEWithLogitsLoss()
+optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.01, momentum=0.75 )  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer)
-epochs_array = model_01_trainer.train(50, X_train, X_test, y_train, y_test)
+epochs_array = model_01_trainer.train(20000, X_train, X_test, y_train, y_test)
 model_01_trainer.plot_training_curves()
+
+
+# %% Saving model
+
+# create models directory
+MODEL_PATH = Path("models")
+MODEL_PATH.mkdir(parents=True, exist_ok=True)
+# create model save path
+today = date.today()
+MODEL_NAME = str(today) + ".pth"
+MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
+print(f"Saving model to : {MODEL_SAVE_PATH}")
+
+# 3. SAVE THE MODEL SAVE DICT
+torch.save(obj=model_01.state_dict(), f=MODEL_SAVE_PATH)
+plt.show(block=True)
+
+
 
 # %% Make estimates
 model_01_trainer.model.eval()  # turns off difference setting sin th emodel not needed evaluating/testing
 with torch.inference_mode():
     y_pred = model_01_trainer.model(X_test)  # Perform inference on GPU
-
+    y_pred = torch.round(torch.sigmoid(y_pred))
 
 # %%
 # unscale the y_test and y_preds
@@ -89,39 +108,25 @@ for column in df_result_y_test_scaled.columns:
     df_result_y_pred[column] = unscale(df_result_y_pred_scaled[column], column)
 
 # %% Plotting
-n = 10
-plt.figure()
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test.iloc[:, -3:], axis=1)[:n], c='green', label='y_test')
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred.iloc[:, -3:], axis=1)[:n], c='blue', label='y_pred')
+# n = 10
+# plt.figure()
+# plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test.iloc[:, -3:], axis=1)[:n], c='green', label='y_test')
+# plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred.iloc[:, -3:], axis=1)[:n], c='blue', label='y_pred')
+#
+# # Set labels and title
+# plt.xlabel('Epochs')
+# plt.ylabel('Magnitude of velocity [km/s]')
+# plt.title('Scatter Plot of Magnitudes Scaled back')
+# plt.legend()
+# plt.show()
+#
+# plt.figure()
+# plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test_scaled.iloc[:, -3:], axis=1)[:n], c='green', label='y_test')
+# plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred_scaled.iloc[:, -3:], axis=1)[:n], c='blue', label='y_preds')
+#
+# # Set labels and title
+# plt.xlabel('Epochs')
+# plt.ylabel('Magnitude of velocity [km/s]')
+# plt.title('Scatter Plot of Magnitudes scaled')
+# plt.legend()
 
-# Set labels and title
-plt.xlabel('Epochs')
-plt.ylabel('Magnitude of velocity [km/s]')
-plt.title('Scatter Plot of Magnitudes Scaled back')
-plt.legend()
-plt.show()
-
-plt.figure()
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_test_scaled.iloc[:, -3:], axis=1)[:n], c='green', label='y_test')
-plt.scatter(epochs_array[:n], np.linalg.norm(df_result_y_pred_scaled.iloc[:, -3:], axis=1)[:n], c='blue', label='y_preds')
-
-# Set labels and title
-plt.xlabel('Epochs')
-plt.ylabel('Magnitude of velocity [km/s]')
-plt.title('Scatter Plot of Magnitudes scaled')
-plt.legend()
-
-# %% Saving model
-
-# create models directory
-MODEL_PATH = Path("models")
-MODEL_PATH.mkdir(parents=True, exist_ok=True)
-# create model save path
-today = date.today()
-MODEL_NAME = str(today) + ".pth"
-MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
-print(f"Saving model to : {MODEL_SAVE_PATH}")
-
-# 3. SAVE THE MODEL SAVE DICT
-torch.save(obj=model_01.state_dict(), f=MODEL_SAVE_PATH)
-plt.show(block=True)

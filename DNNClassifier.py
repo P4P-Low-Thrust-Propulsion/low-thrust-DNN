@@ -11,17 +11,22 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DNNClassifier(nn.Module):
     def __init__(self):
         super().__init__()
-        self.n = 300
-        self.layer1 = nn.Linear(in_features=3, out_features=self.n)
+        self.n = 1500
+        self.layer1 = nn.Linear(in_features=117, out_features=self.n)
         self.layer2 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer3 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer4 = nn.Linear(in_features=self.n, out_features=self.n)
         self.layer5 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer6 = nn.Linear(in_features=self.n, out_features=3)
+        self.layer6 = nn.Linear(in_features=self.n, out_features=self.n)
+        self.layer7 = nn.Linear(in_features=self.n, out_features=self.n)
+        self.layer8 = nn.Linear(in_features=self.n, out_features=self.n)
+        self.layer9 = nn.Linear(in_features=self.n, out_features=39)
         self.relu = nn.SELU()
 
+
+
     def forward(self, x):
-        return self.layer6(self.relu(self.layer5(self.relu(self.layer4(self.relu(self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))))))))
+        return self.layer9(self.relu(self.layer8(self.relu(self.layer7(self.relu(self.layer6(self.relu(self.layer5(self.relu(self.layer4(self.relu(self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))))))))))))))
 
 
 class ModelTrainer:
@@ -68,4 +73,5 @@ class ModelTrainer:
         plt.ylabel('Loss')
         plt.title('Training Loss Curve')
         plt.legend()
-        plt.show()
+        print("Training loss is :",self.train_losses[-1], "    Test loss is :",self.test_losses[-1])
+
