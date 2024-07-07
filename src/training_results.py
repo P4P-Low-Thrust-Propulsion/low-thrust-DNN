@@ -21,13 +21,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # mpl.use('macosx')
 
 DATA_PATH = Path("data/processed")
-DATA_SET = "100K"
+DATA_SET = "10K_10"
 DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
 
 # create saved_models directory
 MODEL_PATH = Path("src/models/saved_models")
 today = date.today()
-MODEL_NAME = str(today) + "-" + DATA_SET + ".pth"
+MODEL_NAME = str(today) + "_" + DATA_SET + ".pth"
 MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
 
 df = pd.read_csv(DATA_PATH / DATA_NAME)
@@ -79,7 +79,7 @@ loss_fn = nn.MSELoss()
 optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.001, momentum=0.75)  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
-epochs_array = model_01_trainer.train(150, x_train, x_test, y_train, y_test, False)
+epochs_array = model_01_trainer.train(300, x_train, x_test, y_train, y_test, False)
 model_01_trainer.plot_training_curves()
 
 

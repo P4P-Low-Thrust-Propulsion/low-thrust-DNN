@@ -111,7 +111,7 @@ class TransferFrameRotation:
 
 
 class TransferGenerator:
-    def __init__(self, n, flag):
+    def __init__(self, n, ecc, flag):
         self.flag = flag
         if self.flag:
             self.fig, self.ax = plt.subplots()
@@ -121,6 +121,7 @@ class TransferGenerator:
             self.plotter2.set_attractor(Sun)
 
         self.num_samples = n
+        self.ecc = ecc
         self.df = pd.DataFrame()
 
     def generate_transfers(self):
@@ -192,7 +193,7 @@ class TransferGenerator:
                 tof = man_lambert.get_total_time().to(u.s)
                 (v0, vf) = lambert(Sun.k, r_earth, r_final, tof)
 
-                if ss_trans.ecc < 1:
+                if ss_trans.ecc < self.ecc/10:
                     break
 
             initial_dv_vector = man_lambert.impulses[0]
@@ -324,17 +325,16 @@ class TransferGenerator:
 mpl.use('macosx')
 
 DATA_PATH = Path("data/processed")
-NUM_TRANSFERS = 5
-DATA_NAME = "transfer_data_" + format_number(NUM_TRANSFERS) + ".csv"
+ECC = 10
+NUM_TRANSFERS = 10000
+DATA_NAME = "transfer_data_" + format_number(NUM_TRANSFERS) + "_" + str(ECC) + ".csv"
 DATA_SAVE_PATH = DATA_PATH / DATA_NAME
 
 # Create an instance of TransferGenerator
-transfer_gen = TransferGenerator(NUM_TRANSFERS, True)
+transfer_gen = TransferGenerator(NUM_TRANSFERS, ECC, False)
 
 # Generate transfer processed
 transfer_gen.generate_transfers()
 
 # Save processed to CSV
 transfer_gen.save_data_to_csv(DATA_SAVE_PATH)
-
-# Less than 10
