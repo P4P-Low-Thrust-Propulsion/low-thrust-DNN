@@ -16,10 +16,16 @@ import logging
 
 # Parameters
 DATA_SET = "10K_01"
-RECORD = True
+RECORD = False
 LEARNING_RATE = 0.001
-EPOCHS = 300
+EPOCHS = 1000
 TEST_SIZE = 0.2
+
+INPUT_SIZE = 3
+OUTPUT_SIZE = 4
+NUM_LAYERS = 9
+NUM_NEURONS = 64
+ACTIVATION = nn.SELU
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -47,8 +53,8 @@ df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 # pd.set_option('display.max_columns', None)
 # logging.info("\n" + str(df.describe(include='all')))
 
-df_Features = df.iloc[:, :3]
-df_Labels = df.iloc[:, -4:]
+df_Features = df.iloc[:, :INPUT_SIZE]
+df_Labels = df.iloc[:, -OUTPUT_SIZE:]
 
 data_Features = df_Features.values
 data_Labels = df_Labels.values
@@ -72,7 +78,7 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_SIZE, r
 torch.manual_seed(42)
 
 # create an instance of the model
-model_01 = DNNClassifier()
+model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS,ACTIVATION)
 model_01.state_dict()
 
 # Your model and processed setup

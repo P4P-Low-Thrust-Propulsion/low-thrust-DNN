@@ -26,23 +26,27 @@ def r2_score(y_true, y_pred):
 
 
 class DNNClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size, output_size, num_layers, num_neurons,activation_fn):
         super().__init__()
-        self.n = 300
-        self.layer1 = nn.Linear(in_features=3, out_features=self.n)
-        self.layer2 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer3 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer4 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer5 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer6 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer7 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer8 = nn.Linear(in_features=self.n, out_features=self.n)
-        self.layer9 = nn.Linear(in_features=self.n, out_features=4)
-        self.activation = nn.SELU()
+        layers = []
+
+        # Input layer
+        layers.append(nn.Linear(input_size, num_neurons))
+        layers.append(nn.SELU())
+
+        # Hidden layers
+        for _ in range(num_layers - 2):  # num_layers includes input and output layers
+            layers.append(nn.Linear(num_neurons, num_neurons))
+            layers.append(activation_fn())
+
+        # Output layer
+        layers.append(nn.Linear(num_neurons, output_size))
+
+        # Create a sequential container
+        self.model = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.layer9(self.activation(self.layer8(self.activation(self.layer7(self.activation(self.layer6(self.activation(self.layer5(
-            self.activation(self.layer4(self.activation(self.layer3(self.activation(self.layer2(self.activation(self.layer1(x)))))))))))))))))
+        return self.model(x)
 
 
 class ModelTrainer:
