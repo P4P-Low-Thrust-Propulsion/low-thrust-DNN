@@ -14,6 +14,13 @@ from scipy import stats
 import seaborn as sns
 import logging
 
+# Parameters
+DATA_SET = "10K_01"
+RECORD = True
+LEARNING_RATE = 0.001
+EPOCHS = 300
+TEST_SIZE = 0.2
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -21,7 +28,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # mpl.use('macosx')
 
 DATA_PATH = Path("data/processed")
-DATA_SET = "10K_10"
 DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
 
 # create saved_models directory
@@ -60,7 +66,7 @@ logging.info("CUDA (NVIDIA GPU) available: " + str(cuda_available))
 device = torch.device("cuda" if cuda_available else "mps")
 
 # %% Setting up training params
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_SIZE, random_state=42)
 
 # %% Construct a model class that subclasses nn.Module
 torch.manual_seed(42)
@@ -76,10 +82,10 @@ x_train, x_test, y_train, y_test = x_train.to(device), x_test.to(device), y_trai
 # %% Train model
 # Setting up a loss function and optimizer
 loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(params=model_01.parameters(), lr=0.001, momentum=0.75)  # lr = learning rate
+optimizer = torch.optim.SGD(params=model_01.parameters(), lr=LEARNING_RATE, momentum=0.75)  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
-epochs_array = model_01_trainer.train(300, x_train, x_test, y_train, y_test, False)
+epochs_array = model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
 model_01_trainer.plot_training_curves()
 
 
