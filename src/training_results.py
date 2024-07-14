@@ -15,7 +15,7 @@ import seaborn as sns
 import logging
 
 # Parameters
-DATA_SET = "10K_01"
+DATA_SET = "10K_05"
 RECORD = False
 LEARNING_RATE = 0.001
 EPOCHS = 1000
@@ -23,8 +23,8 @@ TEST_SIZE = 0.2
 
 INPUT_SIZE = 3
 OUTPUT_SIZE = 4
-NUM_LAYERS = 9
-NUM_NEURONS = 64
+NUM_LAYERS = 6
+NUM_NEURONS = 50
 ACTIVATION = nn.SELU
 
 # Configure logging
@@ -135,12 +135,12 @@ for i in range(2):  # Loop over x, y components
     plt.figure()
 
     # Plot y_test and y_pred for the i-th component (initial and final velocities)
-    plt.scatter(epochs_array[:n], y_test_velocities[:, i], c='green', label=f'y_test v0 {["x", "y"][i]}')
-    plt.scatter(epochs_array[:n], y_pred_velocities[:, i], c='blue', label=f'y_pred v0 {["x", "y"][i]}')
+    plt.scatter(epochs_array[:n], y_test_velocities[:, i], c='green', label=f'y_test v0 {["x", "y"][i]}',s=10)
+    plt.scatter(epochs_array[:n], y_pred_velocities[:, i], c='blue', label=f'y_pred v0 {["x", "y"][i]}',s=10)
 
     # Set labels and title
-    plt.xlabel('Epochs')
-    plt.ylabel(f'Velocity Component {["X", "Y"][i]} [km/s]')
+    plt.xlabel('Point ')
+    plt.ylabel(f'Initial velocity component in {["X", "Y"][i]} direction [km/s]')
     plt.title(f'Scatter Plot of Initial Velocity Component {["X", "Y"][i]} Predictions')
     plt.legend()
     plt.show()
@@ -149,12 +149,12 @@ for i in range(2):  # Loop over x, y components
     plt.figure()
 
     # Plot y_test and y_pred for the i-th component (initial and final velocities)
-    plt.scatter(epochs_array[:n], y_test_velocities[:, 2+i], c='green', label=f'y_test vf {["x", "y"][i]}')
-    plt.scatter(epochs_array[:n], y_pred_velocities[:, 2+i], c='blue', label=f'y_pred  vf {["x", "y"][i]}')
+    plt.scatter(epochs_array[:n], y_test_velocities[:, 2+i], c='green', label=f'y_test vf {["x", "y"][i]}',s=10)
+    plt.scatter(epochs_array[:n], y_pred_velocities[:, 2+i], c='blue', label=f'y_pred  vf {["x", "y"][i]}',s=10)
 
     # Set labels and title
-    plt.xlabel('Epochs')
-    plt.ylabel(f'Velocity Component {["X", "Y"][i]} [km/s]')
+    plt.xlabel('Point')
+    plt.ylabel(f'Final velocity component in {["X", "Y"][i]} direction [km/s]')
     plt.title(f'Scatter Plot of Final Velocity Component {["X", "Y"][i]} Predictions')
     plt.legend()
     plt.show()
@@ -164,105 +164,127 @@ for i in range(2):  # Loop over x, y components
 # y_pred = y_pred.cpu().numpy()
 y_test = df_result_y_test.iloc[:, -4:].values  # Extracting last 4 columns for y_test
 y_pred = df_result_y_pred.iloc[:, -4:].values  # Extracting last 4 columns for y_pred
-errors = abs(y_test - y_pred)
+errors = (y_test - y_pred)
 error_percentage = (errors / y_test) * 100
-filtered_error_percentage = np.where(abs(error_percentage) > 500, 100, error_percentage)
-
+filtered_error_percentage = np.where(error_percentage > 100, 100, error_percentage)
+filtered_error_percentage = np.where(filtered_error_percentage < -100, -100, filtered_error_percentage)
 # %%  Plot 1 (Prediction vs Actual plot)
 # Plotting actual vs predicted values
 n_bins = 1500
-fig, axes = plt.subplots(2, 2, figsize=(12, 6))
+fig, axes = plt.subplots(2, 2, figsize=(15, 15))
 (ax1, ax2), (ax3, ax4) = axes
-ax1.scatter(y_test[:n_bins, 0], y_pred[:n_bins, 0], color='blue', alpha=0.5)
+ax1.scatter(y_test[:n_bins, 0], y_pred[:n_bins, 0], color='blue', alpha=0.5,s=4)
 ax1.plot([min(y_test[:n_bins, 0]), max(y_test[:n_bins, 0])], [min(y_test[:n_bins, 0]), max(y_test[:n_bins, 0])],
-         color='red', linestyle='--')
-ax1.set_title("Actual Vs Predicted Initial x Values  ")
-ax1.set_xlabel("Actual Values ")
-ax1.set_ylabel("Predicted Values ")
+         color='green', linestyle='--')
+ax1.set_title("Predicted Vs Actual ")
+ax1.set_xlabel("Actual Initial Velocity Values X Direction [km/s] ")
+ax1.set_ylabel("Predicted Initial Velocity Values X Direction [km/s]")
 
-ax2.scatter(y_test[:n_bins, 1], y_pred[:n_bins, 1], color='blue', alpha=0.5)
+ax2.scatter(y_test[:n_bins, 1], y_pred[:n_bins, 1], color='blue', alpha=0.5,s=4)
 ax2.plot([min(y_test[:n_bins, 1]), max(y_test[:n_bins, 1])], [min(y_test[:n_bins, 1]), max(y_test[:n_bins, 1])],
-         color='red', linestyle='--')
-ax2.set_title("Actual Vs Predicted Initial y values ")
-ax2.set_xlabel("Actual Values ")
-ax2.set_ylabel("Predicted Values ")
+         color='green', linestyle='--')
+ax2.set_title("Predicted Vs Actual  ")
+ax2.set_xlabel("Actual Initial Values Y Direction [km/s]")
+ax2.set_ylabel("Predicted Initial Values Y Direction [km/s] ")
 
-ax3.scatter(y_test[:n_bins, 2], y_pred[:n_bins, 2], color='blue', alpha=0.5)
+ax3.scatter(y_test[:n_bins, 2], y_pred[:n_bins, 2], color='blue', alpha=0.5,s=4)
 ax3.plot([min(y_test[:n_bins, 2]), max(y_test[:n_bins, 2])], [min(y_test[:n_bins, 2]), max(y_test[:n_bins, 2])],
-         color='red', linestyle='--')
-ax3.set_title("Actual Vs Predicted Final x Values  ")
-ax3.set_xlabel("Actual Values ")
-ax3.set_ylabel("Predicted Values ")
+         color='green', linestyle='--')
+ax3.set_title("Predicted Vs Actual ")
+ax3.set_xlabel("Actual Final Values X Direction [km/s]")
+ax3.set_ylabel("Predicted Final Values X Direction [km/s]")
 
-ax4.scatter(y_test[:n_bins, 3], y_pred[:n_bins, 3], color='blue', alpha=0.5)
+ax4.scatter(y_test[:n_bins, 3], y_pred[:n_bins, 3], color='blue', alpha=0.5,s=4)
 ax4.plot([min(y_test[:n_bins, 3]), max(y_test[:n_bins, 3])], [min(y_test[:n_bins, 3]), max(y_test[:n_bins, 3])],
-         color='red', linestyle='--')
-ax4.set_title("Actual Vs Predicted Final y values ")
-ax4.set_xlabel("Actual Values ")
-ax4.set_ylabel("Predicted Values ")
+         color='green', linestyle='--')
+ax4.set_title("Predicted Vs Actual ")
+ax4.set_xlabel("Actual Final Values Y Direction [km/s]")
+ax4.set_ylabel("Predicted Final Values Y Direction [km/s]")
 
-plt.tight_layout()
+# Add column titles
+fig.text(0.25, 0.95, 'X Direction', ha='center', fontsize=16)
+fig.text(0.75, 0.95, 'Y Direction', ha='center', fontsize=16)
+
+# Add row titles
+fig.text(0.06, 0.75, 'Initial Velocity', va='center', rotation='vertical', fontsize=16)
+fig.text(0.06, 0.25, 'Final Velocity', va='center', rotation='vertical', fontsize=16)
+plt.savefig('Actual vs predicted.png', dpi=1200)
 plt.show()
 
 # %% Plot 2 (Residual plots)
 # Plotting actual vs predicted values
-fig, axes = plt.subplots(2, 2, figsize=(12, 6))
+fig, axes = plt.subplots(2, 2, figsize=(15, 15))
 (ax1, ax2), (ax3, ax4) = axes
-ax1.scatter(y_pred[:n_bins, 0], errors[:n_bins, 0], color='blue', alpha=0.5)
-ax1.axhline(y=0, color='red', linestyle='--')
-ax1.set_title("Residual Plot Initial x ")
-ax1.set_xlabel("Predicted Values")
-ax1.set_ylabel("Residues ")
+ax1.scatter(y_test[:n_bins, 0], errors[:n_bins, 0], color='blue', alpha=0.5,s=4)
+ax1.axhline(y=0, color='green', linestyle='--')
+ax1.set_title("Residual Vs Actual")
+ax1.set_xlabel("Actual Initial Velocity X direction [km/s]")
+ax1.set_ylabel("Residues [km/s]")
 
-ax2.scatter(y_pred[:n_bins, 1], errors[:n_bins, 1], color='blue', alpha=0.5)
-ax2.axhline(y=0, color='red', linestyle='--')
-ax2.set_title("Residual Plot Initial y ")
-ax2.set_xlabel("Predicted Values")
-ax2.set_ylabel("Residues ")
+ax2.scatter(y_test[:n_bins, 1], errors[:n_bins, 1], color='blue', alpha=0.5,s=4)
+ax2.axhline(y=0, color='green', linestyle='--')
+ax2.set_title("Residual Vs Actual")
+ax2.set_xlabel("Actual Initial Velocity Y direction [km/s]")
+ax2.set_ylabel("Residues [km/s]")
 
-ax3.scatter(y_pred[:n_bins, 2], errors[:n_bins, 2], color='blue', alpha=0.5)
-ax3.axhline(y=0, color='red', linestyle='--')
-ax3.set_title("Residual Plot Final x ")
-ax3.set_xlabel("Predicted Values")
-ax3.set_ylabel("Residues ")
+ax3.scatter(y_test[:n_bins, 2], errors[:n_bins, 2], color='blue', alpha=0.5,s=4)
+ax3.axhline(y=0, color='green', linestyle='--')
+ax3.set_title("Residual Vs Actual")
+ax3.set_xlabel("Actual Final Velocity X direction [km/s]")
+ax3.set_ylabel("Residues [km/s]")
 
-ax4.scatter(y_pred[:n_bins, 3], errors[:n_bins, 3], color='blue', alpha=0.5)
-ax4.axhline(y=0, color='red', linestyle='--')
-ax4.set_title("Residual Plot Final y ")
-ax4.set_xlabel("Predicted Values")
-ax4.set_ylabel("Residues ")
+ax4.scatter(y_test[:n_bins, 3], errors[:n_bins, 3], color='blue', alpha=0.5,s=4)
+ax4.axhline(y=0, color='green', linestyle='--')
+ax4.set_title("Residual Vs Final")
+ax4.set_xlabel("Actual Final Velocity Y direction [km/s]")
+ax4.set_ylabel("Residues [km/s]")
 
-plt.tight_layout()
+# Add column titles
+fig.text(0.25, 0.95, 'X Direction', ha='center', fontsize=16)
+fig.text(0.75, 0.95, 'Y Direction', ha='center', fontsize=16)
+
+# Add row titles
+fig.text(0.06, 0.75, 'Initial Velocity', va='center', rotation='vertical', fontsize=16)
+fig.text(0.06, 0.25, 'Final Velocity', va='center', rotation='vertical', fontsize=16)
+plt.savefig('Residues vs actual.png', dpi=1200)
 plt.show()
 
 # %% Plot 3 (Residue percentage)
-fig, axes = plt.subplots(2, 2, figsize=(12, 6))
+fig, axes = plt.subplots(2, 2, figsize=(15, 15))
 (ax1, ax2), (ax3, ax4) = axes
-ax1.scatter(y_test[:n_bins, 0], filtered_error_percentage[:n_bins, 0], color='blue', alpha=0.5)
-ax1.axhline(y=0, color='red', linestyle='--')
-ax1.set_title("Residual Plot Initial x as percentage")
-ax1.set_xlabel("Predicted Values")
-ax1.set_ylabel("Residues %")
+ax1.scatter(y_test[:n_bins, 0], filtered_error_percentage[:n_bins, 0], color='blue', alpha=0.5,s=4)
+ax1.axhline(y=0, color='green', linestyle='--')
+ax1.set_title("Residual % Vs Actual Intial Velocity X")
+ax1.set_xlabel("Actual Initial Velocity X Direction [km/s]")
+ax1.set_ylabel("Residues [%]")
 
-ax2.scatter(y_test[:n_bins, 1], filtered_error_percentage[:n_bins, 1], color='blue', alpha=0.5)
-ax2.axhline(y=0, color='red', linestyle='--')
-ax2.set_title("Residual Plot Initial y as percentage")
-ax2.set_xlabel("Predicted Values")
-ax2.set_ylabel("Residues %")
+ax2.scatter(y_test[:n_bins, 1], filtered_error_percentage[:n_bins, 1], color='blue', alpha=0.5,s=4)
+ax2.axhline(y=0, color='green', linestyle='--')
+ax2.set_title("Residual % Vs Actual Intial Velocity Y")
+ax2.set_xlabel("Actual Initial Velocity Y Direction [km/s]")
+ax2.set_ylabel("Residues [%]")
 
-ax3.scatter(y_test[:n_bins, 2], filtered_error_percentage[:n_bins, 2], color='blue', alpha=0.5)
-ax3.axhline(y=0, color='red', linestyle='--')
-ax3.set_title("Residual Plot Final x as percentage")
-ax3.set_xlabel("Predicted Values")
-ax3.set_ylabel("Residues %")
+ax3.scatter(y_test[:n_bins, 2], filtered_error_percentage[:n_bins, 2], color='blue', alpha=0.5,s=4)
+ax3.axhline(y=0, color='green', linestyle='--')
+ax3.set_title("Residual % Vs Acutal Final Velocity X")
+ax3.set_xlabel("Actual Final Velocity X Direction [km/s]")
+ax3.set_ylabel("Residues [%]")
 
-ax4.scatter(y_test[:n_bins, 3], filtered_error_percentage[:n_bins, 3], color='blue', alpha=0.5)
-ax4.axhline(y=0, color='red', linestyle='--')
-ax4.set_title("Residual Plot Final y as percentage")
-ax4.set_xlabel("Predicted Values")
-ax4.set_ylabel("Residues %")
+ax4.scatter(y_test[:n_bins, 3], filtered_error_percentage[:n_bins, 3], color='blue', alpha=0.5,s=4)
+ax4.axhline(y=0, color='green', linestyle='--')
+ax4.set_title("Residual % Vs Actual Final Velocity Y")
+ax4.set_xlabel("Actual Final Velocity Y Direction [km/s]")
+ax4.set_ylabel("Residues [%]")
 
-plt.tight_layout()
+
+# Add column titles
+fig.text(0.25, 0.95, 'X Direction', ha='center', fontsize=16)
+fig.text(0.75, 0.95, 'Y Direction', ha='center', fontsize=16)
+
+# Add row titles
+fig.text(0.06, 0.75, 'Initial Velocity', va='center', rotation='vertical', fontsize=16)
+fig.text(0.06, 0.25, 'Final Velocity', va='center', rotation='vertical', fontsize=16)
+plt.savefig('Residues percental vs actual.png', dpi=1200)
 plt.show()
 
 # %% Plot 3 (Bar Chart)
