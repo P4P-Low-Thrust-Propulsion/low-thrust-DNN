@@ -26,13 +26,11 @@ def r2_score(y_true, y_pred):
 
 
 class DNNClassifier(nn.Module):
-    def __init__(self, input_size, output_size, num_layers, num_neurons,activation_fn):
+    def __init__(self, input_size, output_size, num_layers, num_neurons, activation_fn):
         super().__init__()
-        layers = []
 
         # Input layer
-        layers.append(nn.Linear(input_size, num_neurons))
-        layers.append(nn.SELU())
+        layers = [nn.Linear(input_size, num_neurons), nn.SELU()]
 
         # Hidden layers
         for _ in range(num_layers - 2):  # num_layers includes input and output layers
@@ -57,6 +55,9 @@ class ModelTrainer:
         self.data_set = data_set
         self.train_losses = []
         self.test_losses = []
+        self.mae_array = []
+        self.mse_array = []
+        self.r2_array = []
         self.epochs_array = []
 
     def train(self, n_epochs, x_train, x_test, y_train, y_test, track):
@@ -113,12 +114,14 @@ class ModelTrainer:
                         "r2_score": r2,
                     })
 
+            self.mae_array.append(mae)
+            self.mse_array.append(mse)
+            self.r2_array.append(r2)
             self.epochs_array.append(epoch)
 
         logging.info("Training complete.")
-        if track: wandb.finish()
-
-        return self.epochs_array
+        if track:
+            wandb.finish()
 
     def plot_training_curves(self):
         plt.figure()

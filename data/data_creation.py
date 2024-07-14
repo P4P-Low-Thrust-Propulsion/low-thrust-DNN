@@ -1,22 +1,26 @@
+# Poliastro imports
 from poliastro.bodies import Earth, Mars, Sun
-from astropy.coordinates import solar_system_ephemeris
 from poliastro.bodies import Sun
 from poliastro.ephem import Ephem
 from poliastro.plotting import OrbitPlotter3D, StaticOrbitPlotter
 from poliastro.util import time_range
 from poliastro.maneuver import Maneuver
-from astropy.time import Time
 from poliastro.twobody.orbit import Orbit
 from poliastro.iod import lambert
+
+# Astropy imports
+from astropy.time import Time
+from astropy.coordinates import solar_system_ephemeris
 from astropy import units as u
 from astropy.constants import G, M_earth, M_sun
+
+# Misc imports
 from pathlib import Path
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
-from tqdm import tqdm
 import logging
 
 # Configure logging
