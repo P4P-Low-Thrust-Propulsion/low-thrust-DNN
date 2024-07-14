@@ -2,7 +2,9 @@ import wandb
 import pprint
 from src.models.DNNClassifier import DNNClassifier, ModelTrainer
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import (
+    MinMaxScaler, StandardScaler, RobustScaler, MaxAbsScaler, PowerTransformer, QuantileTransformer
+)
 import torch.nn.functional
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -29,7 +31,54 @@ def main():
     OUTPUT_SIZE = 4
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
-    ACTIVATION = nn.SELU
+
+    activation_function = 'SELU'
+    if activation_function == 'ELU':
+        ACTIVATION = nn.ELU
+    elif activation_function == 'Hardshrink':
+        ACTIVATION = nn.Hardshrink
+    elif activation_function == 'Hardsigmoid':
+        ACTIVATION = nn.Hardsigmoid
+    elif activation_function == 'Hardtanh':
+        ACTIVATION = nn.Hardtanh
+    elif activation_function == 'Hardswish':
+        ACTIVATION = nn.Hardswish
+    elif activation_function == 'LeakyReLU':
+        ACTIVATION = nn.LeakyReLU
+    elif activation_function == 'LogSigmoid':
+        ACTIVATION = nn.LogSigmoid
+    elif activation_function == 'PReLU':
+        ACTIVATION = nn.PReLU
+    elif activation_function == 'ReLU':
+        ACTIVATION = nn.ReLU
+    elif activation_function == 'ReLU6':
+        ACTIVATION = nn.ReLU6
+    elif activation_function == 'RReLU':
+        ACTIVATION = nn.RReLU
+    elif activation_function == 'SELU':
+        ACTIVATION = nn.SELU
+    elif activation_function == 'CELU':
+        ACTIVATION = nn.CELU
+    elif activation_function == 'GELU':
+        ACTIVATION = nn.GELU
+    elif activation_function == 'Sigmoid':
+        ACTIVATION = nn.Sigmoid
+    elif activation_function == 'SiLU':
+        ACTIVATION = nn.SiLU
+    elif activation_function == 'Mish':
+        ACTIVATION = nn.Mish
+    elif activation_function == 'Softplus':
+        ACTIVATION = nn.Softplus
+    elif activation_function == 'Softshrink':
+        ACTIVATION = nn.Softshrink
+    elif activation_function == 'Softsign':
+        ACTIVATION = nn.Softsign
+    elif activation_function == 'Tanh':
+        ACTIVATION = nn.Tanh
+    elif activation_function == 'Tanhshrink':
+        ACTIVATION = nn.Tanhshrink
+    else:
+        raise ValueError(f"Unknown activation function '{activation_function}'")
 
     # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,8 +97,24 @@ def main():
 
     df = pd.read_csv(DATA_PATH / DATA_NAME)
 
-    # Initialize the scaler
-    scaler = StandardScaler()  # or MaxAbsScaler()
+
+    method = wandb.config.SCALING_TECHNIQUE
+    if method == 'minmax':
+        scaler = MinMaxScaler()
+    elif method == 'standard':
+        scaler = StandardScaler()
+    elif method == 'robust':
+        scaler = RobustScaler()
+    elif method == 'maxabs':
+        scaler = MaxAbsScaler()
+    elif method == 'yeo-johnson':
+        scaler = PowerTransformer(method='yeo-johnson')
+    elif method == 'quantile-uniform':
+        scaler = QuantileTransformer(output_distribution='uniform')
+    elif method == 'quantile-normal':
+        scaler = QuantileTransformer(output_distribution='normal')
+    else:
+        raise ValueError("Unknown scaling method")
 
     # Fit and transform the scaler to each column separately
     df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
@@ -96,24 +161,37 @@ def main():
 
     model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
     epochs_array = model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
-    wandb.log({"loss": model_01_trainer.train_losses[-1]})
+    wandb.log({"Training_Loss": model_01_trainer.train_losses[-1]})
+
+
+
 
     # %% SWEEP config and setup
 
 #Defining sweep config
 sweep_configuration = {
     "method": "random",
-    "metric": {"goal": "minimize", "name": "loss"},
+    "metric": {"goal": "minimize", "name": "Training_Loss"},
     "parameters": {
+        # "NUM_NEURONS": {"values": [50]},
+        # "NUM_LAYERS": {"values": [6]},
+        # "LEARNING_RATE": {"values": [0.001]},
+        # "EPOCHS": {"values": [1000]},
+        # "TEST_SIZE": {"values": [0.2]},
+        # "SCALING_TECHNIQUE":{"values":['maxabs']},
+        # "ACTIVATION_FUNCTION":{"values":['SELU']},
+
         "NUM_NEURONS": {"values": [16, 32, 64,128,1256]},
         "NUM_LAYERS": {"values": [3, 6, 9,12,15]},
         "LEARNING_RATE": {"values": [0.001,0.01,0.1,0.5]},
-        "EPOCHS": {"values": [100,300,500,900]},
+        "EPOCHS": {"values": [100,300,500,900,1500,3000]},
         "TEST_SIZE": {"values": [0.05,0.1,0.2,0.3]},
+        "SCALING_TECHNIQUE":{"values":['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform', 'quantile-normal']},
+        "ACTIVATION_FUNCTION":{"values":['ELU', 'Hardshrink', 'Hardsigmoid', 'Hardtanh', 'Hardswish', 'LeakyReLU', 'LogSigmoid','PReLU', 'ReLU', 'ReLU6', 'RReLU', 'SELU', 'CELU', 'GELU', 'Sigmoid', 'SiLU', 'Mish','Softplus', 'Softshrink', 'Softsign', 'Tanh', 'Tanhshrink']},
     },
 }
 
 
 pprint.pprint(sweep_configuration)
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="my-first-sweep")
-wandb.agent(sweep_id,main,count =50)
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="my second sweep")
+wandb.agent(sweep_id,main,count =150)
