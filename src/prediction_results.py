@@ -30,7 +30,7 @@ ACTIVATION = nn.SELU
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # %% Data loading and scaling
-DATA_PATH = Path("data/processed")
+DATA_PATH = Path("data/lambert/processed")
 DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
 
 MODEL_PATH = Path("src/models/saved_models")

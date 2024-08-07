@@ -1,2 +1,2 @@
-# python-ml-practice
-Playing around with ML in python
+# low-thrust-DNN
+Part 4 Project Code Base

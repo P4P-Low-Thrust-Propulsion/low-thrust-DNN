@@ -7,32 +7,27 @@ from sklearn.preprocessing import (
 )
 import torch.nn.functional
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 from pathlib import Path
 import torch.nn as nn
 from datetime import date
-import matplotlib as mpl
-import numpy as np
-from scipy import stats
-import seaborn as sns
 import logging
+
 
 def main():
     wandb.init(project="my-first-sweep")
 
     # Parameters
-    DATA_SET = "10K_01"
+    DATA_SET = wandb.config.DATA_SET
     RECORD = False
     LEARNING_RATE = wandb.config.LEARNING_RATE
     EPOCHS = wandb.config.EPOCHS
     TEST_SIZE = wandb.config.TEST_SIZE
-
     INPUT_SIZE = 3
     OUTPUT_SIZE = 4
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
 
-    activation_function = 'SELU'
+    activation_function = wandb.config.ACTIVATION_FUNCTION
     if activation_function == 'ELU':
         ACTIVATION = nn.ELU
     elif activation_function == 'Hardshrink':
@@ -86,7 +81,7 @@ def main():
     # Display plots in separate window
     # mpl.use('macosx')
 
-    DATA_PATH = Path("data/processed")
+    DATA_PATH = Path("data/lambert/processed")
     DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
 
     # create saved_models directory
@@ -96,7 +91,6 @@ def main():
     MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
 
     df = pd.read_csv(DATA_PATH / DATA_NAME)
-
 
     method = wandb.config.SCALING_TECHNIQUE
     if method == 'minmax':
@@ -118,9 +112,6 @@ def main():
 
     # Fit and transform the scaler to each column separately
     df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
-
-    # pd.set_option('display.max_columns', None)
-    # logging.info("\n" + str(df.describe(include='all')))
 
     df_Features = df.iloc[:, :INPUT_SIZE]
     df_Labels = df.iloc[:, -OUTPUT_SIZE:]
@@ -147,7 +138,7 @@ def main():
     torch.manual_seed(42)
 
     # create an instance of the model
-    model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS,ACTIVATION)
+    model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS, ACTIVATION)
     model_01.state_dict()
 
     # Your model and processed setup
@@ -160,38 +151,29 @@ def main():
     optimizer = torch.optim.SGD(params=model_01.parameters(), lr=LEARNING_RATE, momentum=0.75)  # lr = learning rate
 
     model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
-    epochs_array = model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
+    model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
     wandb.log({"Training_Loss": model_01_trainer.train_losses[-1]})
 
 
-
-
-    # %% SWEEP config and setup
-
-#Defining sweep config
+# %% SWEEP config and setup
 sweep_configuration = {
     "method": "random",
     "metric": {"goal": "minimize", "name": "Training_Loss"},
     "parameters": {
-        # "NUM_NEURONS": {"values": [50]},
-        # "NUM_LAYERS": {"values": [6]},
-        # "LEARNING_RATE": {"values": [0.001]},
-        # "EPOCHS": {"values": [1000]},
-        # "TEST_SIZE": {"values": [0.2]},
-        # "SCALING_TECHNIQUE":{"values":['maxabs']},
-        # "ACTIVATION_FUNCTION":{"values":['SELU']},
-
-        "NUM_NEURONS": {"values": [16, 32, 64,128,1256]},
-        "NUM_LAYERS": {"values": [3, 6, 9,12,15]},
-        "LEARNING_RATE": {"values": [0.001,0.01,0.1,0.5]},
-        "EPOCHS": {"values": [100,300,500,900,1500,3000]},
-        "TEST_SIZE": {"values": [0.05,0.1,0.2,0.3]},
-        "SCALING_TECHNIQUE":{"values":['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform', 'quantile-normal']},
-        "ACTIVATION_FUNCTION":{"values":['ELU', 'Hardshrink', 'Hardsigmoid', 'Hardtanh', 'Hardswish', 'LeakyReLU', 'LogSigmoid','PReLU', 'ReLU', 'ReLU6', 'RReLU', 'SELU', 'CELU', 'GELU', 'Sigmoid', 'SiLU', 'Mish','Softplus', 'Softshrink', 'Softsign', 'Tanh', 'Tanhshrink']},
+        "NUM_NEURONS": {"values": [16, 32, 64, 128, 1256]},
+        "NUM_LAYERS": {"values": [3, 6, 9, 12, 15]},
+        "LEARNING_RATE": {"values": [0.001, 0.01, 0.1, 0.5]},
+        "EPOCHS": {"values": [100, 300, 500, 900, 1500, 3000]},
+        "TEST_SIZE": {"values": [0.05, 0.1, 0.2, 0.3]},
+        "DATA_SET": {"values": ['10K_01', '10K_02', '10K_05', '10K_10']},
+        "SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform',
+                                         'quantile-normal']},
+        "ACTIVATION_FUNCTION": {"values": ['ELU', 'Hardshrink', 'Hardsigmoid', 'Hardtanh', 'Hardswish', 'LeakyReLU',
+                                           'LogSigmoid', 'PReLU', 'ReLU', 'ReLU6', 'RReLU', 'SELU', 'CELU', 'GELU',
+                                           'Sigmoid', 'SiLU', 'Mish', 'Softplus', 'Softshrink', 'Softsign', 'Tanh',
+                                           'Tanhshrink']},
     },
 }
 
-
-pprint.pprint(sweep_configuration)
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="my second sweep")
-wandb.agent(sweep_id,main,count =150)
+wandb.agent(sweep_id, main, count=150)

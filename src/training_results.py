@@ -8,23 +8,19 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import torch.nn as nn
 from datetime import date
-import matplotlib as mpl
-import numpy as np
-from scipy import stats
-import seaborn as sns
 import logging
 
 # %% Initial Setup
 # Parameters
-DATA_SET = "10K_05"
+DATA_SET = "10K_01"
 RECORD = False
-LEARNING_RATE = 0.1
-EPOCHS = 900
+LEARNING_RATE = 0.01
+EPOCHS = 500
 TEST_SIZE = 0.2
 INPUT_SIZE = 3
 OUTPUT_SIZE = 4
-NUM_LAYERS = 3
-NUM_NEURONS = 64
+NUM_LAYERS = 9
+NUM_NEURONS = 20
 ACTIVATION = nn.SELU
 
 # Display plots in separate window
@@ -34,7 +30,7 @@ ACTIVATION = nn.SELU
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # %% Data loading and scaling
-DATA_PATH = Path("data/processed")
+DATA_PATH = Path("data/lambert/processed")
 DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
 
 # create saved_models directory
