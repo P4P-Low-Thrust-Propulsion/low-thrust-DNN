@@ -119,9 +119,12 @@ def rv_to_coe(X, mu):
     else:
         omega = abs(theta-360)
 
+    # Conversion factor from AU to km
+    km_to_au = 1 / 149597870.7
+
     # Store COE in a dictionary
     coe = {
-        'a': a,  # Semi-major axis (km)
+        'a': a * km_to_au,  # Semi-major axis (km)
         'e': e,  # Eccentricity
         'i': i,  # Inclination (radians)
         'Omega': Omega,  # Longitude of ascending node (radians)
@@ -168,6 +171,17 @@ def convert_row_to_rtn(row):
         'vy1_rtn': rtn_vel1[1],
         'vz1_rtn': rtn_vel1[2]
     }, rv_to_coe(departure_rtn_state, 1.32712440018e11), rv_to_coe(arrival_rtn_state, 1.32712440018e11)
+
+
+def add_to_new_dataset(data, row, dep_coe, arr_coe):
+    data.append({
+        'a0 [AU]': dep_coe['a'], 'e0': dep_coe['e'], 'i0 [deg]': dep_coe['i'], 'Omega0 [deg]': dep_coe['Omega'],
+        'omega0 [deg]': dep_coe['omega'], 'theta0 [deg]': dep_coe['theta'],
+        'a1 [Au]': arr_coe['a'], 'e1': arr_coe['e'], 'i1 [deg]': arr_coe['i'], 'Omega1 [deg]': arr_coe['Omega'],
+        'omega1 [deg]': arr_coe['omega'], 'theta1 [deg]': arr_coe['theta'],
+        'tof [days]': row['tof [days]'], 'm0_maximum [kg]': row['m0_maximum [kg]'],
+        'm1_maximum [kg]': row['m1_maximum [kg]']
+    })
 
 
 def compare_rows(original_row, converted_row, coe_d, coe_a, row_num, tolerance=1e-5):
@@ -235,16 +249,20 @@ def compare_rows(original_row, converted_row, coe_d, coe_a, row_num, tolerance=1
 def evaluate_accuracy(df, tolerance=1e-5):
     total_match_percentage = 0
     row_count = len(df)
+    data = []
 
     for row_index in range(row_count):
         single_row = df.iloc[row_index]
         converted_row, departure_coe, arrival_coe = convert_row_to_rtn(single_row)
+        add_to_new_dataset(data, single_row, departure_coe, arrival_coe)
         row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
         total_match_percentage += row_percentage
 
     overall_accuracy = total_match_percentage / row_count
     print(f"Number of Rows: {row_count}")
     print(f"Overall Accuracy: {overall_accuracy:.2f}%")
+
+    return pd.DataFrame(data)
 
 
 # Scaling constants
@@ -262,5 +280,9 @@ velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1
 df[velocity_columns] = df[velocity_columns] * v_scale.real
 
 # Evaluate overall accuracy
-evaluate_accuracy(df)
+new_df = evaluate_accuracy(df)
 
+# Save the new dataset to a CSV file
+new_df.to_csv('data/low_thrust/new_transfer_statistics.csv', index=False)
+
+print("New dataset with orbital elements saved successfully.")
