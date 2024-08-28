@@ -173,13 +173,42 @@ def convert_row_to_rtn(row):
     }, rv_to_coe(departure_rtn_state, 1.32712440018e11), rv_to_coe(arrival_rtn_state, 1.32712440018e11)
 
 
-def add_to_new_dataset(data, row, dep_coe, arr_coe):
+def add_to_new_dataset(data, row, dep_coe, arr_coe, converted_row):
+    # data.append({
+    #     'a0 [AU]': dep_coe['a'], 'e0': dep_coe['e'], 'i0 [deg]': dep_coe['i'], 'Omega0 [deg]': dep_coe['Omega'],
+    #     'omega0 [deg]': dep_coe['omega'], 'theta0 [deg]': dep_coe['theta'],
+    #     'a1 [Au]': arr_coe['a'], 'e1': arr_coe['e'], 'i1 [deg]': arr_coe['i'], 'Omega1 [deg]': arr_coe['Omega'],
+    #     'omega1 [deg]': arr_coe['omega'], 'theta1 [deg]': arr_coe['theta'],
+    #     'tof [days]': row['tof [days]'], 'm0_maximum [kg]': row['m0_maximum [kg]'],
+    #     'm1_maximum [kg]': row['m1_maximum [kg]']
+    # })
+    km_to_au = 1 / 149597870.7
     data.append({
-        'a0 [AU]': dep_coe['a'], 'e0': dep_coe['e'], 'i0 [deg]': dep_coe['i'], 'Omega0 [deg]': dep_coe['Omega'],
-        'omega0 [deg]': dep_coe['omega'], 'theta0 [deg]': dep_coe['theta'],
-        'a1 [Au]': arr_coe['a'], 'e1': arr_coe['e'], 'i1 [deg]': arr_coe['i'], 'Omega1 [deg]': arr_coe['Omega'],
-        'omega1 [deg]': arr_coe['omega'], 'theta1 [deg]': arr_coe['theta'],
-        'tof [days]': row['tof [days]'], 'm0_maximum [kg]': row['m0_maximum [kg]'],
+        # # Departure COEs
+        # 'a0 [AU]': dep_coe['a'], 'e0': dep_coe['e'], 'i0 [deg]': dep_coe['i'],
+        # 'Omega0 [deg]': dep_coe['Omega'], 'omega0 [deg]': dep_coe['omega'],
+        # 'theta0 [deg]': dep_coe['theta'],
+        #
+        # # Arrival COEs
+        # 'a1 [AU]': arr_coe['a'], 'e1': arr_coe['e'], 'i1 [deg]': arr_coe['i'],
+        # 'Omega1 [deg]': arr_coe['Omega'], 'omega1 [deg]': arr_coe['omega'],
+        # 'theta1 [deg]': arr_coe['theta'],
+
+        # RTN Frame Values for Departure
+        'r0 [AU]': converted_row['x0_rtn'] * km_to_au, 't0 [AU]': np.around(converted_row['y0_rtn'] * km_to_au, decimals=7),
+        'n0 [AU]': np.around(converted_row['z0_rtn'] * km_to_au, decimals=7),
+        'vr0 [km/s]': converted_row['vx0_rtn'], 'vt0 [km/s]': converted_row['vy0_rtn'],
+        'vn0 [km/s]': np.around(converted_row['vz0_rtn'], decimals=7),
+
+        # RTN Frame Values for Arrival
+        'r1 [AU]': converted_row['x1_rtn'] * km_to_au, 't1 [AU]': converted_row['y1_rtn'] * km_to_au,
+        'n1 [AU]': converted_row['z1_rtn'] * km_to_au,
+        'vr1 [km/s]': converted_row['vx1_rtn'], 'vt1 [km/s]': converted_row['vy1_rtn'],
+        'vn1 [km/s]': converted_row['vz1_rtn'],
+
+        # Time of Flight and Mass Values
+        'tof [days]': row['tof [days]'],
+        'm0_maximum [kg]': row['m0_maximum [kg]'],
         'm1_maximum [kg]': row['m1_maximum [kg]']
     })
 
@@ -254,7 +283,7 @@ def evaluate_accuracy(df, tolerance=1e-5):
     for row_index in range(row_count):
         single_row = df.iloc[row_index]
         converted_row, departure_coe, arrival_coe = convert_row_to_rtn(single_row)
-        add_to_new_dataset(data, single_row, departure_coe, arrival_coe)
+        add_to_new_dataset(data, single_row, departure_coe, arrival_coe, converted_row)
         row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
         total_match_percentage += row_percentage
 
