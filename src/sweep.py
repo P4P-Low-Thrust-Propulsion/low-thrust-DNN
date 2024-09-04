@@ -12,18 +12,20 @@ import torch.nn as nn
 from datetime import date
 import logging
 
+alpha = 0.5
+
 
 def main():
-    wandb.init(project="my-first-sweep")
+    wandb.init(project="Low thrust v2")
 
     # Parameters
-    DATA_SET = wandb.config.DATA_SET
+    DATA_SET = "CART_NEW_DATA"
     RECORD = False
     LEARNING_RATE = wandb.config.LEARNING_RATE
     EPOCHS = wandb.config.EPOCHS
     TEST_SIZE = wandb.config.TEST_SIZE
-    INPUT_SIZE = 3
-    OUTPUT_SIZE = 4
+    INPUT_SIZE = 2
+    OUTPUT_SIZE = 1
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
 
@@ -81,8 +83,9 @@ def main():
     # Display plots in separate window
     # mpl.use('macosx')
 
-    DATA_PATH = Path("data/lambert/processed")
-    DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
+    DATA_PATH = Path("data/low_thrust")
+    # DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
+    DATA_NAME = "new_transfer_statistics_v3.csv"
 
     # create saved_models directory
     MODEL_PATH = Path("src/models/saved_models")
@@ -152,20 +155,28 @@ def main():
 
     model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
     model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
-    wandb.log({"Training_Loss": model_01_trainer.train_losses[-1]})
+
+    # Compute combined loss
+    combined_loss = alpha * model_01_trainer.test_losses[-1] + (1 - alpha) * model_01_trainer.train_losses[-1]
+
+    wandb.log({
+        "Training_Loss": model_01_trainer.train_losses[-1],
+        "Test_Loss": model_01_trainer.test_losses[-1],
+        "Combined_Loss": combined_loss
+    })
 
 
 # %% SWEEP config and setup
 sweep_configuration = {
     "method": "random",
-    "metric": {"goal": "minimize", "name": "Training_Loss"},
+    "metric": {"goal": "minimize", "name": "Combined_Loss"},
     "parameters": {
         "NUM_NEURONS": {"values": [16, 32, 64, 128, 1256]},
         "NUM_LAYERS": {"values": [3, 6, 9, 12, 15]},
         "LEARNING_RATE": {"values": [0.001, 0.01, 0.1, 0.5]},
         "EPOCHS": {"values": [100, 300, 500, 900, 1500, 3000]},
         "TEST_SIZE": {"values": [0.05, 0.1, 0.2, 0.3]},
-        "DATA_SET": {"values": ['10K_01', '10K_02', '10K_05', '10K_10']},
+        # "DATA_SET": {"values": ['10K_01', '10K_02', '10K_05', '10K_10']},
         "SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform',
                                          'quantile-normal']},
         "ACTIVATION_FUNCTION": {"values": ['ELU', 'Hardshrink', 'Hardsigmoid', 'Hardtanh', 'Hardswish', 'LeakyReLU',
@@ -175,5 +186,5 @@ sweep_configuration = {
     },
 }
 
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="my second sweep")
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="Low thrust v2")
 wandb.agent(sweep_id, main, count=150)
