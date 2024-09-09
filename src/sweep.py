@@ -16,7 +16,7 @@ alpha = 0.5
 
 
 def main():
-    wandb.init(project="Low thrust v2")
+    wandb.init(project="three_to_one")
 
     # Parameters
     DATA_SET = "CART_NEW_DATA"
@@ -24,8 +24,8 @@ def main():
     LEARNING_RATE = wandb.config.LEARNING_RATE
     EPOCHS = wandb.config.EPOCHS
     TEST_SIZE = wandb.config.TEST_SIZE
-    INPUT_SIZE = 2
-    OUTPUT_SIZE = 1
+    INPUT_SIZE = 10
+    OUTPUT_SIZE = 2
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
 
@@ -85,7 +85,7 @@ def main():
 
     DATA_PATH = Path("data/low_thrust")
     # DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
-    DATA_NAME = "new_transfer_statistics_v3.csv"
+    DATA_NAME = "low_thrust_segment_statistics.csv"
 
     # create saved_models directory
     MODEL_PATH = Path("src/models/saved_models")
@@ -186,5 +186,5 @@ sweep_configuration = {
     },
 }
 
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="Low thrust v2")
-wandb.agent(sweep_id, main, count=150)
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="three_to_one")
+wandb.agent(sweep_id, main, count=500)
