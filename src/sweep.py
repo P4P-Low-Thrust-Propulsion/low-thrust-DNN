@@ -16,7 +16,7 @@ alpha = 0.5
 
 
 def main():
-    wandb.init(project="three_to_one")
+    wandb.init(project="random_to_one")
 
     # Parameters
     DATA_SET = "CART_NEW_DATA"
@@ -25,7 +25,7 @@ def main():
     EPOCHS = wandb.config.EPOCHS
     TEST_SIZE = wandb.config.TEST_SIZE
     INPUT_SIZE = 10
-    OUTPUT_SIZE = 2
+    OUTPUT_SIZE = 1
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
 
@@ -85,7 +85,7 @@ def main():
 
     DATA_PATH = Path("data/low_thrust")
     # DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
-    DATA_NAME = "low_thrust_segment_statistics.csv"
+    DATA_NAME = "low_thrust_segment_statistics_m0.csv"
 
     # create saved_models directory
     MODEL_PATH = Path("src/models/saved_models")
@@ -177,8 +177,9 @@ sweep_configuration = {
         "EPOCHS": {"values": [100, 300, 500, 900, 1500, 3000]},
         "TEST_SIZE": {"values": [0.05, 0.1, 0.2, 0.3]},
         # "DATA_SET": {"values": ['10K_01', '10K_02', '10K_05', '10K_10']},
-        "SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform',
-                                         'quantile-normal']},
+        #"SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform',
+                                         #'quantile-normal']},
+        "SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'maxabs']},
         "ACTIVATION_FUNCTION": {"values": ['ELU', 'Hardshrink', 'Hardsigmoid', 'Hardtanh', 'Hardswish', 'LeakyReLU',
                                            'LogSigmoid', 'PReLU', 'ReLU', 'ReLU6', 'RReLU', 'SELU', 'CELU', 'GELU',
                                            'Sigmoid', 'SiLU', 'Mish', 'Softplus', 'Softshrink', 'Softsign', 'Tanh',
@@ -186,5 +187,5 @@ sweep_configuration = {
     },
 }
 
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="three_to_one")
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="random_to_one")
 wandb.agent(sweep_id, main, count=500)

@@ -284,12 +284,12 @@ def evaluate_accuracy(df, tolerance=1e-5):
         single_row = df.iloc[row_index]
         converted_row, departure_coe, arrival_coe = convert_row_to_rtn(single_row)
         add_to_new_dataset(data, single_row, departure_coe, arrival_coe, converted_row)
-        row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
-        total_match_percentage += row_percentage
+        #row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
+       # total_match_percentage += row_percentage
 
-    overall_accuracy = total_match_percentage / row_count
-    print(f"Number of Rows: {row_count}")
-    print(f"Overall Accuracy: {overall_accuracy:.2f}%")
+    #overall_accuracy = total_match_percentage / row_count
+    #print(f"Number of Rows: {row_count}")
+    #print(f"Overall Accuracy: {overall_accuracy:.2f}%")
 
     return pd.DataFrame(data)
 
@@ -300,11 +300,11 @@ r_scale = 1.49597870691e8  # km / LU
 v_scale = sqrt(mu/r_scale)  # km/s / LU/TU
 
 # Read the CSV file
-df = pd.read_csv('data/low_thrust/transfer_statistics.csv')
+df = pd.read_csv('data/low_thrust/low_thrust_segment.csv')
 
-velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]', 'vr0 [km/s]',
-                    'vt0 [km/s]', 'vn0 [km/s]', 'vr1 [km/s]', 'vt1 [km/s]', 'vn1 [km/s]']
-
+#velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]', 'vr0 [km/s]',
+                    #'vt0 [km/s]', 'vn0 [km/s]', 'vr1 [km/s]', 'vt1 [km/s]', 'vn1 [km/s]']
+velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]',]
 # Multiply the velocities by v_scale
 df[velocity_columns] = df[velocity_columns] * v_scale.real
 
@@ -312,6 +312,6 @@ df[velocity_columns] = df[velocity_columns] * v_scale.real
 new_df = evaluate_accuracy(df)
 
 # Save the new dataset to a CSV file
-new_df.to_csv('data/low_thrust/new_transfer_statistics.csv', index=False)
+new_df.to_csv('data/low_thrust/low_thrust_segment_statistics.csv', index=False)
 
 print("New dataset with orbital elements saved successfully.")
