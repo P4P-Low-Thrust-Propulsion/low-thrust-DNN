@@ -30,7 +30,7 @@ class DNNClassifier(nn.Module):
         super().__init__()
 
         # Input layer
-        layers = [nn.Linear(input_size, num_neurons), nn.SELU()]
+        layers = [nn.Linear(input_size, num_neurons), activation_fn()]
 
         # Hidden layers
         for _ in range(num_layers - 2):  # num_layers includes input and output layers

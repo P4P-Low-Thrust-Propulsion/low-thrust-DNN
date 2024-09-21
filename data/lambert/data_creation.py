@@ -41,7 +41,7 @@ def rotate_vel_vecs(v_start, v_end, rotation):
     new_v_start = np.dot(rotation.T, v_start)
     new_v_end = np.dot(rotation.T, v_end)
 
-    # Round the results to avoid small floating-point errors
+    # Round the resultso to avoid small floating-point errors
     new_v_start = np.around(new_v_start, decimals=7)
     new_v_end = np.around(new_v_end, decimals=7)
 
@@ -56,7 +56,7 @@ def rotate_pos_vecs(r_start, r_end, flag):
     new_r_start = np.dot(rotation.T, r_start)
     new_r_end = np.dot(rotation.T, r_end)
 
-    # Round the results to avoid small floating-point errors
+    # Round the resultso to avoid small floating-point errors
     new_r_start = np.around(new_r_start, decimals=7)
     new_r_end = np.around(new_r_end, decimals=7)
 
@@ -328,10 +328,10 @@ class TransferGenerator:
 # Display plots in separate window
 # mpl.use('macosx')
 
-DATA_PATH = Path("data/lambert/processed")
+DATA_PATH = Path("data/lambert/datasets/processed")
 ECC = 5
 NUM_TRANSFERS = 4
-DATA_NAME = "report_transfer_data_" + format_number(NUM_TRANSFERS) + "_0" + str(ECC) + ".csv"
+DATA_NAME = "transfer_data_" + format_number(NUM_TRANSFERS) + "_0" + str(ECC) + ".csv"
 DATA_SAVE_PATH = DATA_PATH / DATA_NAME
 
 # Create an instance of TransferGenerator
