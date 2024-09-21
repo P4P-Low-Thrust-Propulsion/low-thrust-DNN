@@ -1,4 +1,4 @@
-src/models/saved_models/random_forest_model.pkl
+*.pkl
 
 # Django #
 *.log
