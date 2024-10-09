@@ -293,7 +293,7 @@ r_scale = 1.49597870691e8  # km / LU
 v_scale = sqrt(mu/r_scale)  # km/s / LU/TU
 
 # Read the CSV file
-df = pd.read_csv('data/low_thrust/datasets/initial/transfer_statistics_500.csv')
+df = pd.read_csv('data/low_thrust/datasets/initial/reachability_01.csv')
 
 # velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]', 'vr0 [km/s]',
 # 'vt0 [km/s]', 'vn0 [km/s]', 'vr1 [km/s]', 'vt1 [km/s]', 'vn1 [km/s]']
@@ -301,12 +301,12 @@ df = pd.read_csv('data/low_thrust/datasets/initial/transfer_statistics_500.csv')
 velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]']
 
 # Multiply the velocities by v_scale
-df[velocity_columns] = df[velocity_columns] * v_scale.real
+df[velocity_columns] = df[velocity_columns]  # * v_scale.real
 
 # Evaluate overall accuracy
 new_df = evaluate_accuracy(df)
 
 # Save the new dataset to a CSV file
-new_df.to_csv('data/low_thrust/datasets/processed/new_transfer_statistics_500.csv', index=False)
+new_df.to_csv('data/low_thrust/datasets/processed/reachability_01.csv', index=False)
 
 print("New dataset with orbital elements saved successfully.")
