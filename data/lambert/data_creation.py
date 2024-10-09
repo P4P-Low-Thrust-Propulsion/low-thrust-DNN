@@ -303,7 +303,7 @@ class TransferGenerator:
 
         # Display grid and legend
         plt.grid()
-        plt.legend()
+        plt.legend(loc="best", fontsize='small')
         plt.show()
 
     def plot_orbit(self, dest_ephem, date_arrival, ss_earth, man_lambert, i):
@@ -326,10 +326,10 @@ class TransferGenerator:
 
 # %% Generate processed
 # Display plots in separate window
-# mpl.use('macosx')
+mpl.use('macosx')
 
 DATA_PATH = Path("data/lambert/datasets/processed")
-ECC = 5
+ECC = 1
 NUM_TRANSFERS = 4
 DATA_NAME = "transfer_data_" + format_number(NUM_TRANSFERS) + "_0" + str(ECC) + ".csv"
 DATA_SAVE_PATH = DATA_PATH / DATA_NAME

@@ -1,5 +1,5 @@
 # %%
-from src.models.DNNClassifier import DNNClassifier
+from src.models.DNN import DNNRegressor
 import pandas as pd
 import numpy as np
 import torch.nn as nn
@@ -7,6 +7,7 @@ import torch.nn.functional
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from pathlib import Path
+import joblib
 import matplotlib as mpl
 import logging
 from sklearn.preprocessing import (
@@ -17,11 +18,14 @@ from sklearn.preprocessing import (
 lambert = False
 
 # Parameters
-EPOCHS = 3000
-LEARNING_RATE = 0.5
+EPOCHS = 400
+LEARNING_RATE = 0.001
 NUM_LAYERS = 12
-NUM_NEURONS = 128
-scaler = MaxAbsScaler()
+NUM_NEURONS_1 = 256
+NUM_NEURONS_2 = 256
+NUM_NEURONS_3 = 128
+x_scaler = joblib.load("src/models/saved_models/x_scaler_v2.pkl")
+y_scaler = joblib.load("src/models/saved_models/y_scaler_v2.pkl")
 TEST_SIZE = 0.2
 ACTIVATION = nn.Softsign
 
@@ -93,12 +97,12 @@ if lambert:
     DATA_NAME = "transfer_data_10K_01.csv"
 else:
     DATA_PATH = Path("data/low_thrust/datasets/processed")
-    DATA_NAME = "new_transfer_statistics_469.csv"
+    DATA_NAME = "new_transfer_statistics_500K_v2.csv"
 
 if lambert:
     MODEL_PATH = Path("src/models/saved_models/2024-09-21_lambert_10K.pth")
 else:
-    MODEL_PATH = Path("src/models/saved_models/2024-09-20_500_best_low_thrust.pth")
+    MODEL_PATH = Path("src/models/saved_models/2024-10-03_low_thrust_500K.pth")
 
 MODEL_SAVE_PATH = MODEL_PATH
 
@@ -110,21 +114,21 @@ logging.info("CUDA (NVIDIA GPU) available: " + str(cuda_available))
 device = torch.device("cuda" if cuda_available else "mps")
 
 torch.manual_seed(42)
-model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS, ACTIVATION)
+model_01 = DNNRegressor(INPUT_SIZE, OUTPUT_SIZE, NUM_NEURONS_1, NUM_NEURONS_2, NUM_NEURONS_3)
 model_01.to(device)
 model_01.load_state_dict(torch.load(MODEL_SAVE_PATH))
 
 df = pd.read_csv(DATA_PATH / DATA_NAME)
 df_original = pd.read_csv(DATA_PATH / DATA_NAME)
 
-# Fit and transform the scaler to each column separately
-df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
-
 df_Features = df.iloc[:, :INPUT_SIZE]
 df_Labels = df.iloc[:, -OUTPUT_SIZE:]
 
-data_Features = df_Features.values
-data_Labels = df_Labels.values
+df_Features = x_scaler.transform(df_Features)
+df_Labels = y_scaler.transform(df_Labels)
+
+data_Features = df_Features
+data_Labels = df_Labels
 
 # Fit and transform the features
 x = torch.tensor(data_Features, dtype=torch.float32)
@@ -135,26 +139,21 @@ x_train, x_test, y_train, y_test = x_train.to(device), x_test.to(device), y_trai
 
 # %% Make estimates
 model_01.eval()
-with torch.inference_mode():
+with torch.no_grad():
     pred_test = model_01(x_test)
     pred_train = model_01(x_train)
     
 
 # %% Unscale the values
 def unscale(scaled_value):
-    unscaled_value = scaler.inverse_transform(scaled_value)
+    unscaled_value = y_scaler.inverse_transform(scaled_value)
     return pd.DataFrame(unscaled_value)
 
 
-df_result_pred_train_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(pred_train.cpu().numpy())],
-                                        ignore_index=True, axis='columns')
-df_result_y_train_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(y_train.cpu().numpy())],
-                                     ignore_index=True, axis='columns')
-
-df_result_y_test_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(y_test.cpu().numpy())],
-                                    ignore_index=True, axis='columns')
-df_result_pred_test_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(pred_test.cpu().numpy())],
-                                       ignore_index=True, axis='columns')
+df_result_pred_train_scaled = pd.DataFrame(pred_train.cpu().numpy())
+df_result_y_train_scaled = pd.DataFrame(y_train.cpu().numpy())
+df_result_y_test_scaled = pd.DataFrame(y_test.cpu().numpy())
+df_result_pred_test_scaled = pd.DataFrame(pred_test.cpu().numpy())
 
 # Apply to unscale function to each column of inputs arrays
 df_result_pred_training = unscale(df_result_pred_train_scaled)
@@ -173,7 +172,7 @@ axes = axes.flatten()
 
 # Loop over each input column and create a histogram
 for i, column in enumerate(input_columns):
-    axes[i].hist(df_original[column], bins=11, color='black')
+    axes[i].hist(df_original[column], bins=20, color='black')
     axes[i].set_title(column)
     axes[i].set_xlabel(column)
     axes[i].set_ylabel('Count')
@@ -183,11 +182,33 @@ for j in range(len(input_columns), len(axes)):
     fig.delaxes(axes[j])
 
 # Set overall title
-fig.suptitle('Training Data Distribution')
+fig.suptitle('Training Data Distribution: Inputs')
 
 # Adjust layout for better appearance
 plt.tight_layout()
 plt.show()
+
+fig, axes = plt.subplots(1, 2, figsize=(9, 6))
+axes = axes.flatten()
+
+# Loop over each input column and create a histogram
+for i, column in enumerate(output_columns):
+    axes[i].hist(df_original[column], bins=20, color='black')
+    axes[i].set_title(column)
+    axes[i].set_xlabel(column)
+    axes[i].set_ylabel('Count')
+
+# If there are any remaining subplots that don't have data, hide them
+for j in range(len(output_columns), len(axes)):
+    fig.delaxes(axes[j])
+
+# Set overall title
+fig.suptitle('Training Data Distribution: Outputs')
+
+# Adjust layout for better appearance
+plt.tight_layout()
+plt.show()
+
 
 # Extract test data
 y_test = df_result_y_test.iloc[:, -len(output_columns):].values  # Dynamically extract columns
@@ -198,13 +219,13 @@ y_train = df_result_y_train.iloc[:, -len(output_columns):].values  # Training ac
 # Analysis
 error_train = (y_train - pred_train)
 error_train_percentage = (error_train / y_train) * 100
-filtered_error_train_percentage = np.where(error_train_percentage > 100, 100, error_train_percentage)
-filtered_error_train_percentage = np.where(filtered_error_train_percentage < -100, -100, filtered_error_train_percentage)
+filtered_error_train_percentage = np.where(error_train_percentage > 10000, 10000, error_train_percentage)
+filtered_error_train_percentage = np.where(filtered_error_train_percentage < -10000, -10000, filtered_error_train_percentage)
 
 error_test = (y_test - pred_test)
 error_test_percentage = (error_test / y_test) * 100
-filtered_error_test_percentage = np.where(error_test_percentage > 100, 100, error_test_percentage)
-filtered_error_test_percentage = np.where(filtered_error_test_percentage < -100, -100, filtered_error_test_percentage)
+filtered_error_test_percentage = np.where(error_test_percentage > 10000, 10000, error_test_percentage)
+filtered_error_test_percentage = np.where(filtered_error_test_percentage < -10000, -10000, filtered_error_test_percentage)
 
 # %% Plot 2 (Prediction vs Actual plot)
 n_columns = len(output_columns)

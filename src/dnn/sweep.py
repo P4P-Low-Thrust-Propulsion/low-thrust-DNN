@@ -1,6 +1,6 @@
 import wandb
 import pprint
-from src.models.DNNClassifier import DNNClassifier, ModelTrainer
+from src.models.DNN import DNNRegressor, ModelTrainer
 import pandas as pd
 from sklearn.preprocessing import (
     MinMaxScaler, StandardScaler, RobustScaler, MaxAbsScaler, PowerTransformer, QuantileTransformer
@@ -16,16 +16,15 @@ alpha = 0.5
 
 
 def main():
-    wandb.init(project="random_to_one")
+    wandb.init(project="Theolasttry")
 
     # Parameters
-    DATA_SET = "CART_NEW_DATA"
     RECORD = False
     LEARNING_RATE = wandb.config.LEARNING_RATE
     EPOCHS = wandb.config.EPOCHS
     TEST_SIZE = wandb.config.TEST_SIZE
     INPUT_SIZE = 10
-    OUTPUT_SIZE = 1
+    OUTPUT_SIZE = 2
     NUM_LAYERS = wandb.config.NUM_LAYERS
     NUM_NEURONS = wandb.config.NUM_NEURONS
 
@@ -85,13 +84,7 @@ def main():
 
     DATA_PATH = Path("data/low_thrust/datasets/processed")
     # DATA_NAME = "transfer_data_" + DATA_SET + ".csv"
-    DATA_NAME = "low_thrust_segment_statistics_m0.csv"
-
-    # create saved_models directory
-    MODEL_PATH = Path("src/models/saved_models")
-    today = date.today()
-    MODEL_NAME = str(today) + "_" + DATA_SET + ".pth"
-    MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
+    DATA_NAME = "new_transfer_statistics_3000.csv"
 
     df = pd.read_csv(DATA_PATH / DATA_NAME)
 
@@ -141,7 +134,7 @@ def main():
     torch.manual_seed(42)
 
     # create an instance of the model
-    model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS, ACTIVATION)
+    model_01 = DNNRegressor(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS, ACTIVATION)
     model_01.state_dict()
 
     # Your model and processed setup
@@ -174,7 +167,7 @@ sweep_configuration = {
         "NUM_NEURONS": {"values": [16, 32, 64, 128, 1256]},
         "NUM_LAYERS": {"values": [3, 6, 9, 12, 15]},
         "LEARNING_RATE": {"values": [0.001, 0.01, 0.1, 0.5]},
-        "EPOCHS": {"values": [100, 300, 500, 900, 1500, 3000]},
+        "EPOCHS": {"values": [50, 100, 300, 500, 900, 1500, 3000]},
         "TEST_SIZE": {"values": [0.05, 0.1, 0.2, 0.3]},
         # "DATA_SET": {"values": ['10K_01', '10K_02', '10K_05', '10K_10']},
         #"SCALING_TECHNIQUE": {"values": ['minmax', 'standard', 'robust', 'maxabs', 'yeo-johnson', 'quantile-uniform',
@@ -187,5 +180,5 @@ sweep_configuration = {
     },
 }
 
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="random_to_one")
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="Theolasttry")
 wandb.agent(sweep_id, main, count=500)

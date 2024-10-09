@@ -6,7 +6,7 @@ filename = 'data/low_thrust/datasets/initial/transfer_information.csv'  # Replac
 original_array = np.genfromtxt(filename, delimiter=',', skip_header=1)
 
 new_array = []
-total_transfers = 500
+total_transfers = 500000
 
 for _ in range(total_transfers):
     num_transfer = np.random.randint(0, 468)  # Select random transfer
@@ -47,6 +47,6 @@ columns = [
 final_df = pd.DataFrame(final, columns=columns)
 
 # Save the DataFrame to a CSV file
-final_df.to_csv('data/low_thrust/datasets/initial/transfer_statistics_500.csv', index=False)
+final_df.to_csv('data/low_thrust/datasets/initial/transfer_statistics_500K.csv', index=False)
 
 print("New dataset saved successfully.")

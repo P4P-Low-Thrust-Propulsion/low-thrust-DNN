@@ -1,5 +1,5 @@
 # %%
-from src.models.DNNClassifier import DNNClassifier, ModelTrainer
+from src.models.DNN import DNNRegressor, ModelTrainer
 import pandas as pd
 import torch.nn.functional
 from sklearn.model_selection import train_test_split
@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import torch.nn as nn
 from datetime import date
+import joblib
 import numpy as np
 import matplotlib as mpl
 import logging
@@ -15,19 +16,22 @@ from sklearn.preprocessing import (
 )
 
 # %% Initial Setup
-lambert = True
+lambert = False
 
 # Parameters
-EPOCHS = 300
-LEARNING_RATE = 0.01
-NUM_LAYERS = 2
-NUM_NEURONS = 128
-scaler = StandardScaler()
+EPOCHS = 400
+LEARNING_RATE = 0.001
+NUM_LAYERS = 12
+NUM_NEURONS_1 = 256
+NUM_NEURONS_2 = 256
+NUM_NEURONS_3 = 128
+x_scaler = StandardScaler()
+y_scaler = StandardScaler()
 TEST_SIZE = 0.2
-ACTIVATION = nn.SELU
+ACTIVATION = nn.Softsign
 
-INPUT_SIZE = 3
-OUTPUT_SIZE = 4
+INPUT_SIZE = 10
+OUTPUT_SIZE = 2
 
 RECORD = False
 
@@ -48,7 +52,7 @@ if lambert:
     DATA_NAME = "transfer_data_10K_01.csv"
 else:
     DATA_PATH = Path("data/low_thrust/datasets/processed")
-    DATA_NAME = "new_transfer_statistics_469.csv"
+    DATA_NAME = "new_transfer_statistics_500K_v2.csv"
 
 # create saved_models directory
 MODEL_PATH = Path("src/models/saved_models")
@@ -57,20 +61,20 @@ today = date.today()
 if lambert:
     MODEL_NAME = str(today) + "_lambert_10K.pth"
 else:
-    MODEL_NAME = str(today) + "_low_thrust_500.pth"
+    MODEL_NAME = str(today) + "_low_thrust_500K.pth"
 
 MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
 
 df = pd.read_csv(DATA_PATH / DATA_NAME)
 
-# Fit and transform the scaler to each column separately
-df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
-
 df_Features = df.iloc[:, :INPUT_SIZE]
 df_Labels = df.iloc[:, -OUTPUT_SIZE:]
 
-data_Features = df_Features.values
-data_Labels = df_Labels.values
+df_Features = x_scaler.fit_transform(df_Features)
+df_Labels = y_scaler.fit_transform(df_Labels)
+
+data_Features = df_Features
+data_Labels = df_Labels
 
 # Fit and transform the features
 x = torch.tensor(data_Features, dtype=torch.float32)
@@ -91,7 +95,7 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_SIZE, r
 torch.manual_seed(42)
 
 # create an instance of the model
-model_01 = DNNClassifier(INPUT_SIZE, OUTPUT_SIZE, NUM_LAYERS, NUM_NEURONS, ACTIVATION)
+model_01 = DNNRegressor(INPUT_SIZE, OUTPUT_SIZE, NUM_NEURONS_1, NUM_NEURONS_2, NUM_NEURONS_3)
 model_01.state_dict()
 
 # Your model and processed setup
@@ -101,7 +105,7 @@ x_train, x_test, y_train, y_test = x_train.to(device), x_test.to(device), y_trai
 # %% Train model
 # Setting up a loss function and optimizer
 loss_fn = nn.MSELoss()
-optimizer = torch.optim.SGD(params=model_01.parameters(), lr=LEARNING_RATE, momentum=0.75)  # lr = learning rate
+optimizer = torch. optim.Adam(model_01.parameters(), lr=LEARNING_RATE)  # lr = learning rate
 
 model_01_trainer = ModelTrainer(model_01, loss_fn, optimizer, DATA_NAME)
 model_01_trainer.train(EPOCHS, x_train, x_test, y_train, y_test, RECORD)
@@ -109,7 +113,7 @@ model_01_trainer.plot_training_curves()
 
 
 def unscale(scaled_value):
-    unscaled_value = scaler.inverse_transform(scaled_value)
+    unscaled_value = y_scaler.inverse_transform(scaled_value)
     return pd.DataFrame(unscaled_value)
 
 
@@ -119,14 +123,10 @@ with torch.inference_mode():
     pred_train = model_01(x_train)  # Prediction on the train data
     pred_test = model_01(x_test)  # Prediction on the test data
 
-df_result_pred_train_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(pred_train.cpu().numpy())],
-                                        ignore_index=True, axis='columns')
-df_result_y_train_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(y_train.cpu().numpy())],
-                                     ignore_index=True, axis='columns')
-df_result_y_test_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(y_test.cpu().numpy())],
-                                    ignore_index=True, axis='columns')
-df_result_pred_test_scaled = pd.concat([pd.DataFrame(x_test.cpu().numpy()), pd.DataFrame(pred_test.cpu().numpy())],
-                                       ignore_index=True, axis='columns')
+df_result_pred_train_scaled = pd.DataFrame(pred_train.cpu().numpy())
+df_result_y_train_scaled = pd.DataFrame(y_train.cpu().numpy())
+df_result_y_test_scaled = pd.DataFrame(y_test.cpu().numpy())
+df_result_pred_test_scaled = pd.DataFrame(pred_test.cpu().numpy())
 
 # # Apply to unscale function to each column of inputs arrays
 df_result_pred_train = unscale(df_result_pred_train_scaled)
@@ -154,6 +154,10 @@ if not lambert:
               f"Test ME: {np.mean(errors_test[:n_points, i]):.4f} [Kg]")
 
 # %% Saving model
+# Save the scaler to a file
+joblib.dump(x_scaler, "src/models/saved_models/x_scaler.pkl")
+joblib.dump(y_scaler, "src/models/saved_models/y_scaler.pkl")
+
 torch.save(obj=model_01.state_dict(), f=MODEL_SAVE_PATH)
 logging.info("Model has been written to " + f"{MODEL_SAVE_PATH}")
 plt.show()

@@ -1,4 +1,6 @@
 import numpy as np
+import torch.nn.functional
+from src.models.DNN import DNNRegressor
 import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product
@@ -11,11 +13,42 @@ from poliastro.bodies import Sun, Earth
 from poliastro.twobody import Orbit
 from poliastro.util import time_range
 from poliastro.ephem import Ephem
+from pathlib import Path
+import matplotlib.tri as tri
+import logging
+from sklearn.preprocessing import (
+    MinMaxScaler, StandardScaler, RobustScaler, MaxAbsScaler, PowerTransformer, QuantileTransformer
+)
+
+# Initial Setup
+dnn = True
+
+# Parameters
+NUM_NEURONS_1 = 256
+NUM_NEURONS_2 = 256
+NUM_NEURONS_3 = 128
+x_scaler = joblib.load("src/models/saved_models/x_scaler.pkl")
+y_scaler = joblib.load("src/models/saved_models/y_scaler.pkl")
+TEST_SIZE = 0.2
+
+INPUT_SIZE = 10
+OUTPUT_SIZE = 2
+
+RECORD = False
 
 # Display plots in separate window
 # mpl.use('macosx')
 mu = 1.32712440018e11  # km^3 / s^2
-tof = 50  # days
+tof = 150  # days
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+# Unscale the values
+def unscale(scaled_value):
+    unscaled_value = y_scaler.inverse_transform(scaled_value)
+    return unscaled_value
 
 
 # Function to calculate the circular velocity at a distance r from the Sun
@@ -44,9 +77,9 @@ def propagate_orbit(initial_orbit, times):
 
 # Initial point values (x0, y0, z0, vx0, vy0, vz0)
 initial_point = {
-    'x0': 2.0,  # AU
-    'y0': 1.0,  # AU
-    'z0': 0.5,  # AU
+    'x0': 3.0,  # AU
+    'y0': 0,  # AU
+    'z0': 0,  # AU
 }
 
 # Time range for plotting (launch time to arrival time)
@@ -103,45 +136,92 @@ earth_x = earth_positions[:, 0]
 earth_y = earth_positions[:, 1]
 earth_z = earth_positions[:, 2]
 
-# Load the saved model from the file
-best_rf_model = joblib.load('src/models/saved_models/random_forest_model.pkl')
-
-file_path = 'data/low_thrust/datasets/processed/reachability.csv'
+# Load data
+file_path = 'data/low_thrust/datasets/processed/reachability_01.csv'
 data = pd.read_csv(file_path)
 
 # Load the reachability data
-grid_df = pd.read_csv('data/low_thrust/datasets/initial/reachability.csv')
+grid_df = pd.read_csv('data/low_thrust/datasets/initial/reachability_01.csv')
 
-# Make predictions using the model
-pred = best_rf_model.predict(data)
-predicted_m0 = pred[:, 0]
+if dnn:
+    # Load DNN model
+    MODEL_PATH = Path("src/models/saved_models/2024-10-02_low_thrust_500K.pth")
+
+    # Check if CUDA (NVIDIA GPU) is available
+    cuda_available = torch.cuda.is_available()
+    logging.info("CUDA (NVIDIA GPU) available: " + str(cuda_available))
+
+    # Move your model and processed tensors to the GPU (if available)
+    device = torch.device("cuda" if cuda_available else "mps")
+
+    torch.manual_seed(42)
+    model_01 = DNNRegressor(INPUT_SIZE, OUTPUT_SIZE, NUM_NEURONS_1, NUM_NEURONS_2, NUM_NEURONS_3)
+    model_01.to(device)
+    model_01.load_state_dict(torch.load(MODEL_PATH))
+
+    df_Features = data.iloc[:, :INPUT_SIZE]
+    df_Labels = data.iloc[:, -OUTPUT_SIZE:]
+
+    df_Features = x_scaler.transform(df_Features)
+
+    # Convert to torch tensor and move to device
+    x_test = torch.tensor(df_Features, dtype=torch.float32).to(device)
+
+    # Make estimates
+    model_01.eval()
+    with torch.no_grad():
+        pred_test = model_01(x_test)
+
+    # Convert predictions back to CPU
+    pred_test_np = pred_test.cpu().numpy()
+
+    # Apply to unscale function to each column of inputs arrays
+    pred = unscale(pred_test_np)
+    predicted_m0 = pred[:, 0]
+    # predicted_m0 = df_Labels['m0_maximum [kg]'].values
+
+    # Set values above 2500 to 2500
+    predicted_m0 = np.where(predicted_m0 > 2600, 2600, predicted_m0)
+
+else:
+    # Load the saved model from the file
+    best_rf_model = joblib.load('src/models/saved_models/random_forest_model_200K.pkl')
+
+    # Make predictions using the model
+    pred = best_rf_model.predict(data)
+    predicted_m0 = pred[:, 0]
 
 # Extract x, y, and initial mass data
-x = grid_df['x1 [AU]']
-y = grid_df['y1 [AU]']
-predicted_m0 = predicted_m0  # Predicted initial mass
+x = grid_df['x1 [AU]'].values
+y = grid_df['y1 [AU]'].values
+
+# Create a triangulation object using x, y, z coordinates
+triang = tri.Triangulation(x, y)
 
 # Create a grid for contouring
-x_grid, y_grid = np.meshgrid(np.linspace(x.min(), x.max(), 200), np.linspace(y.min(), y.max(), 200))
-m0_grid = griddata((x, y), predicted_m0, (x_grid, y_grid), method='cubic')
+# x_grid, y_grid = np.meshgrid(np.linspace(x.min(), x.max(), 200), np.linspace(y.min(), y.max(), 200))
+# m0_grid = griddata((x, y), predicted_m0, (x_grid, y_grid), method='cubic')
 
 # Plot the contour plot
-plt.figure(figsize=(8, 6))
-plt.contourf(x_grid, y_grid, m0_grid, cmap='viridis')
-plt.colorbar(label='Predicted Initial Mass (m0) [kg]')
+plt.figure(figsize=(9, 6))
+contour = plt.tricontourf(triang, predicted_m0, levels=26, cmap="viridis")  # Contour plot
+plt.colorbar(contour, label='Predicted Maximum Initial Mass [kg]')  # Colorbar to show m0 values
+
+# plt.contourf(x_grid, y_grid, m0_grid, cmap='viridis')
+# plt.colorbar(label='Predicted Initial Mass (m0) [kg]')
 
 # Mark the initial point
-plt.scatter(grid_df['x0 [AU]'], grid_df['y0 [AU]'], color='red', label='Departure Point @T=0', s=50)
-plt.scatter(final_r_arrival_au[0], final_r_arrival_au[1], color='green', label='Departure Point @T=tof', s=100)
+# plt.scatter(grid_df['x0 [AU]'], grid_df['y0 [AU]'], color='red', label='Departure Point @T=0', s=50)
+# plt.scatter(final_r_arrival_au[0], final_r_arrival_au[1], color='magenta', label='Departure Point @T=tof', s=100)
 
-# Plot the trajectory (arc) by plotting the stored positions
-plt.plot(x_positions, y_positions, color='green', linestyle='--', label='Orbit Arc')
-
-# Plot Earth's orbit and position
-plt.plot(earth_x, earth_y, color='blue', linestyle='-', label="Earth's Orbit")
-plt.scatter(earth_x[-1], earth_y[-1], color='blue', label="Earth at Arrival", s=200, zorder=10)
-
-plt.scatter(0, 0, c='orange', label='Sun', marker='o', s=100)
+# # Plot the trajectory (arc) by plotting the stored positions
+# plt.plot(x_positions, y_positions, color='magenta', linestyle='--', label='Orbit Arc')
+#
+# # Plot Earth's orbit and position
+# plt.plot(earth_x, earth_y, color='blue', linestyle='--', label="Earth's Orbit")
+# plt.scatter(earth_x[-1], earth_y[-1], color='blue', label="Earth at Arrival", s=200, zorder=10)
+#
+# plt.scatter(0, 0, c='orange', label='Sun', marker='o', s=100)
 
 # Add labels and legend
 plt.xlabel('X [AU]')
@@ -152,43 +232,43 @@ plt.grid(True)
 plt.show()
 
 # 2D Visualization
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(9, 6))
 
 # Plot the Sun
 plt.scatter(0, 0, c='orange', label='Sun', marker='o', s=100)
 
 # Scatter plot with color map for predicted initial mass
 scatter = plt.scatter(grid_df['x1 [AU]'], grid_df['y1 [AU]'], c=predicted_m0, cmap='viridis', s=50, alpha=0.75)
-plt.colorbar(scatter, label='Predicted Initial Mass (m0) [kg]')
+plt.colorbar(scatter, label='Predicted Maximum Initial Mass [kg]')
 
 # Mark the initial point
 plt.scatter(grid_df['x0 [AU]'], grid_df['y0 [AU]'], color='red', label='Departure Point @T=0', s=50)
-plt.scatter(final_r_arrival_au[0], final_r_arrival_au[1], color='green', label='Departure Point @T=tof', s=100)
+plt.scatter(final_r_arrival_au[0], final_r_arrival_au[1], color='magenta', label='Departure Point @T=tof', s=100)
 
 # Plot the trajectory (arc) by plotting the stored positions
-plt.plot(x_positions, y_positions, color='green', linestyle='--', label='Orbit Arc')
+plt.plot(x_positions, y_positions, color='magenta', linestyle='--', label='Orbit Arc')
 
 # Plot Earth's orbit and position
-plt.plot(earth_x, earth_y, color='blue', linestyle='-', label="Earth's Orbit")
-plt.scatter(earth_x[-1], earth_y[-1], color='blue', label="Earth at Arrival", s=200, zorder=10)
+plt.plot(earth_x, earth_y, color='blue', linestyle='--', label="Earth's Orbit")
+plt.scatter(earth_x[-1], earth_y[-1], color='blue', linestyle='--', label="Earth at Arrival", s=200, zorder=10)
 
 # Plot settings
 plt.xlabel('X [AU]')
 plt.ylabel('Y [AU]')
-plt.title('Reachability Analysis: Predicted Initial Mass (2D)')
+plt.title('Reachability Analysis: Predicted Maximum Initial Mass (2D)')
 plt.grid(True)
 plt.axis('equal')
 plt.legend()
 plt.show()
 
 # 3D Visualization
-fig = plt.figure(figsize=(10, 8))
+fig = plt.figure(figsize=(9, 6))
 ax = fig.add_subplot(111, projection='3d')
 
 # Scatter plot with color map for predicted initial mass
 scatter = ax.scatter(grid_df['x1 [AU]'], grid_df['y1 [AU]'], grid_df['z1 [AU]'],
                      c=predicted_m0, cmap='viridis', s=50, alpha=0.75)
-fig.colorbar(scatter, ax=ax, label='Predicted Initial Mass (m0) [kg]')
+fig.colorbar(scatter, ax=ax, label='Predicted Maximum Initial Mass [kg]')
 
 # Plot the Sun
 ax.scatter(0, 0, 0, c='orange', label='Sun', marker='o', s=100)
@@ -196,21 +276,21 @@ ax.scatter(0, 0, 0, c='orange', label='Sun', marker='o', s=100)
 # Mark the initial point
 ax.scatter(grid_df['x0 [AU]'], grid_df['y0 [AU]'], grid_df['z0 [AU]'], color='red', label='Departure Point @T=0',
            s=50,  zorder=10)
-ax.scatter(final_r_arrival_au[0], final_r_arrival_au[1], final_r_arrival_au[2], color='green',
+ax.scatter(final_r_arrival_au[0], final_r_arrival_au[1], final_r_arrival_au[2], color='magenta',
            label='Departure Point @T=tof', s=100, zorder=10)
 
 # Plot the trajectory (arc) by plotting the stored positions
-ax.plot(x_positions, y_positions, z_positions, color='green', linestyle='--', label='Orbit Arc')
+ax.plot(x_positions, y_positions, z_positions, color='magenta', linestyle='--', label='Orbit Arc')
 
 # Plot Earth's orbit and position
-ax.plot(earth_x, earth_y, earth_z, color='blue', linestyle='-', label="Earth's Orbit")
+ax.plot(earth_x, earth_y, earth_z, color='blue', linestyle='--', label="Earth's Orbit")
 ax.scatter(earth_x[-1], earth_y[-1], earth_z[-1], color='blue', label="Earth at Arrival", s=200, zorder=10)
 
 # Plot settings
 ax.set_xlabel('X [AU]')
 ax.set_ylabel('Y [AU]')
 ax.set_zlabel('Z [AU]')
-ax.set_title('Reachability Analysis: Predicted Initial Mass (3D)')
+ax.set_title('Reachability Analysis: Predicted Maximum Initial Mass (3D)')
 ax.legend()
 plt.show(block=True)
 

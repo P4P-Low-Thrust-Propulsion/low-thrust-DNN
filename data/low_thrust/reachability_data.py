@@ -14,8 +14,8 @@ from poliastro.util import time_range
 mpl.use('macosx')
 
 mu = 1.32712440018e11  # km^3 / s^2
-tof = 50  # days
-buffer_radius = 0.3
+tof = 250  # days
+buffer_radius = 0
 
 
 def plot_vectors_3D(r_initial, r_final, v_initial, v_final, am):
@@ -89,9 +89,9 @@ def project_point_onto_plane(point, normal_vector):
 
 # Initial point values (x0, y0, z0, vx0, vy0, vz0)
 initial_point = {
-    'x0': 2.0,  # AU
-    'y0': 1.0,  # AU
-    'z0': 0.5,  # AU
+    'x0': 3,  # AU
+    'y0': 0,  # AU
+    'z0': 0,  # AU
 }
 
 # Set up solar system ephemeris (optional but useful for more accuracy)
@@ -130,9 +130,9 @@ final_r_arrival_au = final_r_arrival.to(u.AU)
 
 # Define the grid search range around the initial point for final positions
 grid_size = 50  # Defines the number of points along each axis
-range_x = np.linspace(-0.5 + final_r_arrival_au[0].value, 0.5 + final_r_arrival_au[0].value, grid_size)  # AU
-range_y = np.linspace(-0.5 + final_r_arrival_au[1].value, 0.5 + final_r_arrival_au[1].value, grid_size)  # AU
-range_z = np.linspace(-0.5 + final_r_arrival_au[2].value, 0.5 + final_r_arrival_au[2].value, grid_size)  # AU
+range_x = np.linspace(-0.2 + final_r_arrival_au[0].value, 0.2 + final_r_arrival_au[0].value, grid_size)  # AU
+range_y = np.linspace(-0.2 + final_r_arrival_au[1].value, 0.2 + final_r_arrival_au[1].value, grid_size)  # AU
+range_z = np.linspace(0, 0, grid_size)  # AU
 
 # Initialize an empty list to store the grid points
 grid_points = []
@@ -140,40 +140,40 @@ grid_points = []
 # Loop through all combinations of x1, y1, z1 values to generate final points
 for x1 in range_x:
     for y1 in range_y:
-        for z1 in range_z:
-            # Final position vector before projection (in AU)
-            r1_vector_AU = np.array([x1, y1, z1])
+        z1 = range_z[0]
+        # Final position vector before projection (in AU)
+        r1_vector_AU = np.array([x1, y1, z1])
 
-            # Project the final position vector onto the orbital plane
-            r1_projected = project_point_onto_plane(r1_vector_AU, angular_momentum) * AU_to_km
+        # # Project the final position vector onto the orbital plane
+        # r1_projected = project_point_onto_plane(r1_vector_AU, angular_momentum) * AU_to_km
 
-            # Calculate the distance from the initial point
-            distance_from_initial = np.sqrt(
-                ((r1_projected[0] / AU_to_km) - final_r_arrival_au[0].value) ** 2 + ((r1_projected[1] / AU_to_km) - final_r_arrival_au[1].value) ** 2)
+        # # Calculate the distance from the initial point
+        # distance_from_initial = np.sqrt(
+        #     ((r1_vector_AU[0] / AU_to_km) - final_r_arrival_au[0].value) ** 2 + ((r1_vector_AU[1] / AU_to_km) - final_r_arrival_au[1].value) ** 2)
+        #
+        # # Add point to the list if it is outside the buffer radius
+        # if distance_from_initial <= buffer_radius:
+        #     continue
 
-            # Add point to the list if it is outside the buffer radius
-            if distance_from_initial <= buffer_radius:
-                continue
+        # Calculate the distance from the Sun after projection
+        r1 = np.linalg.norm(r1_vector_AU * AU_to_km)
 
-            # Calculate the distance from the Sun after projection
-            r1 = np.linalg.norm(r1_projected)
+        # Calculate the circular velocity at this distance
+        v_circ = calc_circular_velocity(r1)
 
-            # Calculate the circular velocity at this distance
-            v_circ = calc_circular_velocity(r1)
+        # Calculate the velocity vector that keeps the orbit in the same plane
+        v1_vector = calc_velocity_in_plane(r1_vector_AU * AU_to_km, v_circ, angular_momentum)
 
-            # Calculate the velocity vector that keeps the orbit in the same plane
-            v1_vector = calc_velocity_in_plane(r1_projected, v_circ, angular_momentum)
+        # # Optionally plot the vectors in 3D (you can adjust this based on your plot logic)
+        # plot_vectors_3D(initial_r, r1_projected, initial_v, v1_vector, angular_momentum)
 
-            # # Optionally plot the vectors in 3D (you can adjust this based on your plot logic)
-            # plot_vectors_3D(initial_r, r1_projected, initial_v, v1_vector, angular_momentum)
-
-            # Append the initial and final points along with the TOF to the list
-            grid_points.append([
-                initial_point['x0'], initial_point['y0'], initial_point['z0'],
-                initial_v[0], initial_v[1], initial_v[2],
-                r1_projected[0] / AU_to_km, r1_projected[1] / AU_to_km, r1_projected[2] / AU_to_km,
-                v1_vector[0], v1_vector[1], v1_vector[2], tof
-            ])
+        # Append the initial and final points along with the TOF to the list
+        grid_points.append([
+            initial_point['x0'], initial_point['y0'], initial_point['z0'],
+            initial_v[0], initial_v[1], initial_v[2],
+            r1_vector_AU[0] , r1_vector_AU[1] , r1_vector_AU[2] ,
+            v1_vector[0], v1_vector[1], v1_vector[2], tof
+        ])
 
 # Convert the list to a DataFrame
 columns = [
@@ -222,5 +222,5 @@ fig.write_html("data/low_thrust/plots/reachability_transfers.html")
 plt.show(block=True)
 
 # Save the dataframe
-grid_df.to_csv('data/low_thrust/datasets/initial/reachability.csv', index=False)
+grid_df.to_csv('data/low_thrust/datasets/initial/reachability_01.csv', index=False)
 

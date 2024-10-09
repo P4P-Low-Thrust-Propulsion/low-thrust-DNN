@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the dataset
-file_path = 'data/low_thrust/datasets/processed/new_transfer_statistics_500.csv'
+file_path = 'data/low_thrust/datasets/processed/new_transfer_statistics_500K_v2.csv'
 data = pd.read_csv(file_path)
 
 output_columns = ['m0_maximum [kg]', 'm1_maximum [kg]']
@@ -39,7 +39,7 @@ grid_search.fit(x_train, y_train)
 best_rf_model = grid_search.best_estimator_
 
 # Save the model to a file
-joblib.dump(best_rf_model, 'src/models/saved_models/random_forest_model.pkl')
+joblib.dump(best_rf_model, 'src/models/saved_models/random_forest_model_500K.pkl')
 
 print("Model saved successfully!")
 
