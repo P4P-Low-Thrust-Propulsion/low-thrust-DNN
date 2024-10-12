@@ -1,7 +1,7 @@
 from cmath import sqrt
-
 import numpy as np
 import pandas as pd
+import argparse
 
 
 def eci_to_rtn(position, velocity):
@@ -32,7 +32,7 @@ def eci_to_rtn(position, velocity):
     position_rtn = np.dot(R.T, position)
     velocity_rtn = np.dot(R.T, velocity)
 
-    # Round the resultso to avoid small floating-point errors
+    # Round the results to avoid small floating-point errors
     position_rtn = np.around(position_rtn, decimals=7)
     velocity_rtn = np.around(velocity_rtn, decimals=7)
 
@@ -176,16 +176,6 @@ def convert_row_to_rtn(row):
 def add_to_new_dataset(data, row, dep_coe, arr_coe, converted_row):
     km_to_au = 1 / 149597870.7
     data.append({
-        # # Departure COEs
-        # 'a0 [AU]': dep_coe['a'], 'e0': dep_coe['e'], 'i0 [deg]': dep_coe['i'],
-        # 'Omega0 [deg]': dep_coe['Omega'], 'omega0 [deg]': dep_coe['omega'],
-        # 'theta0 [deg]': dep_coe['theta'],
-        #
-        # # Arrival COEs
-        # 'a1 [AU]': arr_coe['a'], 'e1': arr_coe['e'], 'i1 [deg]': arr_coe['i'],
-        # 'Omega1 [deg]': arr_coe['Omega'], 'omega1 [deg]': arr_coe['omega'],
-        # 'theta1 [deg]': arr_coe['theta'],
-
         # RTN Frame Values for Departure
         'r0 [AU]': converted_row['x0_rtn'] * km_to_au,
         'vr0 [km/s]': converted_row['vx0_rtn'],
@@ -277,9 +267,12 @@ def evaluate_accuracy(df, tolerance=1e-5):
         single_row = df.iloc[row_index]
         converted_row, departure_coe, arrival_coe = convert_row_to_rtn(single_row)
         add_to_new_dataset(data, single_row, departure_coe, arrival_coe, converted_row)
-        # row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
-        # total_match_percentage += row_percentage
 
+    # THE BELOW CODE MAY BE UNCOMMENTED WHEN COMPARING AGAINST JACKS DATASET THAT CONTAINS THE CORRECT CONVERTED VALUES
+
+    #     row_percentage = compare_rows(single_row, converted_row, departure_coe, arrival_coe, row_index, tolerance)
+    #     total_match_percentage += row_percentage
+    #
     # overall_accuracy = total_match_percentage / row_count
     # print(f"Number of Rows: {row_count}")
     # print(f"Overall Accuracy: {overall_accuracy:.2f}%")
@@ -287,26 +280,37 @@ def evaluate_accuracy(df, tolerance=1e-5):
     return pd.DataFrame(data)
 
 
-# Scaling constants
-mu = 1.32712440018e11  # km^3 / s^2
-r_scale = 1.49597870691e8  # km / LU
-v_scale = sqrt(mu/r_scale)  # km/s / LU/TU
+if __name__ == "__main__":
+    # Scaling constants
+    mu = 1.32712440018e11  # km^3 / s^2
+    r_scale = 1.49597870691e8  # km / LU
+    v_scale = sqrt(mu / r_scale)  # km/s / LU/TU
 
-# Read the CSV file
-df = pd.read_csv('data/low_thrust/datasets/initial/reachability_01.csv')
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Generate specific dataset.")
 
-# velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]', 'vr0 [km/s]',
-# 'vt0 [km/s]', 'vn0 [km/s]', 'vr1 [km/s]', 'vt1 [km/s]', 'vn1 [km/s]']
+    # Add arguments
+    parser.add_argument('--DATA_NAME', type=str, default="transfer_statistics_100.csv", help='File to rotate')
 
-velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]']
+    # Parse the arguments
+    args = parser.parse_args()
 
-# Multiply the velocities by v_scale
-df[velocity_columns] = df[velocity_columns]  # * v_scale.real
+    # Read the CSV file
+    df = pd.read_csv('data/low_thrust/datasets/initial/' + args.DATA_NAME)
 
-# Evaluate overall accuracy
-new_df = evaluate_accuracy(df)
+    # THE BELOW CODE MAY BE UNCOMMENTED WHEN COMPARING AGAINST JACKS DATASET THAT CONTAINS THE CORRECT CONVERTED VALUES
+    # velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]',
+    # 'vr0 [km/s]', 'vt0 [km/s]', 'vn0 [km/s]', 'vr1 [km/s]', 'vt1 [km/s]', 'vn1 [km/s]']
 
-# Save the new dataset to a CSV file
-new_df.to_csv('data/low_thrust/datasets/processed/reachability_01.csv', index=False)
+    velocity_columns = ['vx0 [km/s]', 'vy0 [km/s]', 'vz0 [km/s]', 'vx1 [km/s]', 'vy1 [km/s]', 'vz1 [km/s]']
 
-print("New dataset with orbital elements saved successfully.")
+    # Multiply the velocities by v_scale
+    df[velocity_columns] = df[velocity_columns]  # if using jacks old dataset * v_scale.real
+
+    # Evaluate overall accuracy
+    new_df = evaluate_accuracy(df)
+
+    # Save the new dataset to a CSV file
+    new_df.to_csv('data/low_thrust/datasets/processed/new_' + args.DATA_NAME, index=False)
+
+    print("New dataset with orbital elements saved successfully to new_" + args.DATA_NAME)

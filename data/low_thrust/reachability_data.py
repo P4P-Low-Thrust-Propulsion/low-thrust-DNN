@@ -144,17 +144,6 @@ for x1 in range_x:
         # Final position vector before projection (in AU)
         r1_vector_AU = np.array([x1, y1, z1])
 
-        # # Project the final position vector onto the orbital plane
-        # r1_projected = project_point_onto_plane(r1_vector_AU, angular_momentum) * AU_to_km
-
-        # # Calculate the distance from the initial point
-        # distance_from_initial = np.sqrt(
-        #     ((r1_vector_AU[0] / AU_to_km) - final_r_arrival_au[0].value) ** 2 + ((r1_vector_AU[1] / AU_to_km) - final_r_arrival_au[1].value) ** 2)
-        #
-        # # Add point to the list if it is outside the buffer radius
-        # if distance_from_initial <= buffer_radius:
-        #     continue
-
         # Calculate the distance from the Sun after projection
         r1 = np.linalg.norm(r1_vector_AU * AU_to_km)
 
@@ -163,9 +152,6 @@ for x1 in range_x:
 
         # Calculate the velocity vector that keeps the orbit in the same plane
         v1_vector = calc_velocity_in_plane(r1_vector_AU * AU_to_km, v_circ, angular_momentum)
-
-        # # Optionally plot the vectors in 3D (you can adjust this based on your plot logic)
-        # plot_vectors_3D(initial_r, r1_projected, initial_v, v1_vector, angular_momentum)
 
         # Append the initial and final points along with the TOF to the list
         grid_points.append([
@@ -218,7 +204,6 @@ for index, row in grid_df.iterrows():
 # Show plot
 fig.show()
 fig = plotter3D.set_view(30 * u.deg, 260 * u.deg, distance=3 * u.km)
-fig.write_html("data/low_thrust/plots/reachability_transfers.html")
 plt.show(block=True)
 
 # Save the dataframe

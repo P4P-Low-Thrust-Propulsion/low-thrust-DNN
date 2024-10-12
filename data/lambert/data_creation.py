@@ -15,6 +15,7 @@ from astropy import units as u
 from astropy.constants import G, M_earth, M_sun
 
 # Misc imports
+import argparse
 from pathlib import Path
 from tqdm import tqdm
 import numpy as np
@@ -41,7 +42,7 @@ def rotate_vel_vecs(v_start, v_end, rotation):
     new_v_start = np.dot(rotation.T, v_start)
     new_v_end = np.dot(rotation.T, v_end)
 
-    # Round the resultso to avoid small floating-point errors
+    # Round the results to avoid small floating-point errors
     new_v_start = np.around(new_v_start, decimals=7)
     new_v_end = np.around(new_v_end, decimals=7)
 
@@ -59,15 +60,6 @@ def rotate_pos_vecs(r_start, r_end, flag):
     # Round the resultso to avoid small floating-point errors
     new_r_start = np.around(new_r_start, decimals=7)
     new_r_end = np.around(new_r_end, decimals=7)
-
-    # if flag:
-    #     print("\n ROTATION MATRIX:\n")
-    #     print("r_start:\n", r_start, "\n")
-    #     print("r_end:\n", r_end, "\n")
-    #
-    #     print("Rotation Matrix:\n", rotation, "\n")
-    #     print("New r_start (should align with x-axis):\n", new_r_start, "\n")
-    #     print("New r_end:\n", new_r_end, "\n")
 
     # Validate that new_r_start aligns with the x-axis
     try:
@@ -208,11 +200,11 @@ class TransferGenerator:
             final_magnitude = np.linalg.norm(final_dv)
 
             if self.flag:
-                # print("Delta-v for the transfer:", man_lambert.get_total_cost())
-                # print("Initial Delta-V: ", initial_magnitude)
-                # print("Final Delta-V: ", final_magnitude)
-                # print("Transfer orbit:")
-                # print(man_lambert.get_total_time())
+                print("Delta-v for the transfer:", man_lambert.get_total_cost())
+                print("Initial Delta-V: ", initial_magnitude)
+                print("Final Delta-V: ", final_magnitude)
+                print("Transfer orbit:")
+                print(man_lambert.get_total_time())
 
                 self.plot_vectors_3D(r_earth, r_final, v_earth, v_final, v0, vf, i)
                 self.plot_orbit(dest_ephem, date_arrival, ss_earth, man_lambert, i)
@@ -241,7 +233,6 @@ class TransferGenerator:
             # Set view parameters
             self.fig.show()
             fig = self.plotter3D.set_view(30 * u.deg, 260 * u.deg, distance=3 * u.km)
-            fig.write_html("data/lambert/plots/multiple_transfers.html")
             plt.show(block=True)
 
     def save_data_to_csv(self, filename):
@@ -324,21 +315,29 @@ class TransferGenerator:
         )
 
 
-# %% Generate processed
-# Display plots in separate window
-mpl.use('macosx')
+if __name__ == "__main__":
+    # Display plots in separate window
+    # mpl.use('macosx')
 
-DATA_PATH = Path("data/lambert/datasets/processed")
-ECC = 1
-NUM_TRANSFERS = 4
-DATA_NAME = "transfer_data_" + format_number(NUM_TRANSFERS) + "_0" + str(ECC) + ".csv"
-DATA_SAVE_PATH = DATA_PATH / DATA_NAME
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Generate specific dataset.")
 
-# Create an instance of TransferGenerator
-transfer_gen = TransferGenerator(NUM_TRANSFERS, ECC, True)
+    # Add arguments
+    parser.add_argument('--NUM_TRANSFERS', type=int, default=10, help='Number of transfers to generate.')
+    parser.add_argument('--ECC', type=int, default=1, help='Eccentricity limit for transfers.')
 
-# Generate transfer processed
-transfer_gen.generate_transfers()
+    # Parse the arguments
+    args = parser.parse_args()
 
-# Save processed to CSV
-transfer_gen.save_data_to_csv(DATA_SAVE_PATH)
+    DATA_PATH = Path("data/lambert/datasets/processed")
+    DATA_NAME = "transfer_data_" + format_number(args.NUM_TRANSFERS) + "_0" + str(args.ECC) + ".csv"
+    DATA_SAVE_PATH = DATA_PATH / DATA_NAME
+
+    # Create an instance of TransferGenerator
+    transfer_gen = TransferGenerator(n=args.NUM_TRANSFERS, ecc=args.ECC, flag=False)
+
+    # Generate transfer processed
+    transfer_gen.generate_transfers()
+
+    # Save processed to CSV
+    transfer_gen.save_data_to_csv(DATA_SAVE_PATH)
