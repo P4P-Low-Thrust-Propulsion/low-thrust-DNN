@@ -67,30 +67,6 @@ else:
         'tof [days]'
     ]
 
-    # input_columns = [
-    #     'relative_r [AU]',
-    #     'relative_t [AU]',
-    #     'relative_n [AU]',
-    #     'relative_vr [km/s]',
-    #     'relative_vt [km/s]',
-    #     'relative_vn [km/s]',
-    #     'tof [days]'
-    # ]
-
-    # input_columns = [
-    #     'a0 [AU]',
-    #     'e0',
-    #     'omega0 [deg]',
-    #     'theta0 [deg]',
-    #     'a1 [Au]',
-    #     'e1',
-    #     'i1 [deg]',
-    #     'Omega1 [deg]',
-    #     'omega1 [deg]',
-    #     'theta1 [deg]',
-    #     'tof [days]'
-    # ]
-
 # %% Data loading and scaling
 if lambert:
     DATA_PATH = Path("data/lambert/datasets/processed")
@@ -161,8 +137,8 @@ df_result_y_test = unscale(df_result_y_test_scaled)
 df_result_y_train = unscale(df_result_y_train_scaled)
 df_result_pred_test = unscale(df_result_pred_test_scaled)
 
-
 # %% Plot 1 (Distribution Plot)
+plt.ion()
 # Create subplots (4x3 grid for 12 subplots, one will remain empty)
 if lambert:
     fig, axes = plt.subplots(1, 3, figsize=(9, 6))
@@ -375,5 +351,39 @@ for column_set in column_sets:
     # Adjust layout for better appearance
     plt.tight_layout()
     plt.show()
+
+# Define percentile levels to plot
+percentiles = np.linspace(0, 100, 101)  # Percentiles from 0 to 100
+
+# Compute percentiles for training and test errors
+test_percentiles = np.percentile(filtered_error_test_percentage, percentiles, axis=0)
+
+# Plot percentiles for each output column
+n_columns = len(output_columns)
+mid_point = n_columns // 2
+column_sets = [output_columns[:mid_point], output_columns[mid_point:]]
+
+fig, ax = plt.subplots(figsize=(9, 6))  # Single subplot
+
+# Loop through each output column and plot percentiles on the same subplot
+for j, col_name in enumerate(output_columns):
+    # Plot test percentiles
+    ax.plot(percentiles, test_percentiles[:, j], label=f'{col_name} Test Error Percentiles')
+
+# Add the mean prediction absolute error (MPAE) line for reference
+ax.axhline(y=2.1, color='green', linestyle='--', label='MPAE: 2.1%')
+
+# Add labels and title
+ax.set_title("Percentile Error Distribution Across Output Columns")
+ax.set_xlabel('Percentile')
+ax.set_ylabel('Error [%]')
+
+# Add legend
+ax.legend(loc="best", fontsize='small')
+
+# Adjust layout for better appearance
+plt.tight_layout()
+plt.ioff()
+plt.show()
 
 print("Plotting complete")

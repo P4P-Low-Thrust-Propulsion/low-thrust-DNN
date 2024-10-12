@@ -60,6 +60,7 @@ filtered_error_test_percentage = np.where(filtered_error_test_percentage < -1000
 filtered_error_test_percentage = filtered_error_test_percentage[:]
 
 # %% Plot 1 (Distribution Plot)
+plt.ion()
 fig, axes = plt.subplots(4, 3, figsize=(9, 6))
 axes = axes.flatten()
 
@@ -229,5 +230,34 @@ for column_set in column_sets:
     # Adjust layout for better appearance
     plt.tight_layout()
     plt.show()
+
+# Define percentile levels to plot
+percentiles = np.linspace(0, 100, 101)  # Percentiles from 0 to 100
+
+# Compute percentiles for training and test errors
+test_percentiles = np.percentile(filtered_error_test_percentage, percentiles, axis=0)
+
+fig, ax = plt.subplots(figsize=(9, 6))  # Single subplot
+
+# Loop through each output column and plot percentiles on the same subplot
+for j, col_name in enumerate(output_columns):
+    # Plot test percentiles
+    ax.plot(percentiles, test_percentiles[:, j], label=f'{col_name} Test Error Percentiles')
+
+# Add the mean prediction absolute error (MPAE) line for reference
+ax.axhline(y=1.35, color='green', linestyle='--', label='MPAE: 1.35%')
+
+# Add labels and title
+ax.set_title("Percentile Error Distribution Across Output Columns")
+ax.set_xlabel('Percentile')
+ax.set_ylabel('Error [%]')
+
+# Add legend
+ax.legend(loc="best", fontsize='small')
+
+# Adjust layout for better appearance
+plt.tight_layout()
+plt.ioff()
+plt.show()
 
 print("Plotting complete")

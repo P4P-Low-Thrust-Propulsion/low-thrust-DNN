@@ -155,8 +155,8 @@ if not lambert:
 
 # %% Saving model
 # Save the scaler to a file
-joblib.dump(x_scaler, "src/models/saved_models/x_scaler.pkl")
-joblib.dump(y_scaler, "src/models/saved_models/y_scaler.pkl")
+# joblib.dump(x_scaler, "src/models/saved_models/x_scaler.pkl")
+# joblib.dump(y_scaler, "src/models/saved_models/y_scaler.pkl")
 
 torch.save(obj=model_01.state_dict(), f=MODEL_SAVE_PATH)
 logging.info("Model has been written to " + f"{MODEL_SAVE_PATH}")

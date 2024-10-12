@@ -124,6 +124,7 @@ class ModelTrainer:
             wandb.finish()
 
     def plot_training_curves(self):
+        plt.ion()
         plt.figure()
         plt.xscale('log')
         plt.yscale('log')
