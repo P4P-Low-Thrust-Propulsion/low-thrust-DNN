@@ -124,37 +124,37 @@ Example commands to generate data and run a model:
 
 #### Data Generation Lambert 
 1. Lambert dataset generation requires running the following script with the required number of transfers you want to create along with the eccentricity limit:
-    ```
+    ```bash
     python data/lambert/data_creation.py --NUM_TRANSFERS 1000 --ECC 1
     ```
    
 #### Data Generation low-thrust 
 1. For low-thrust you first have to generate a large number of transfers via the following command:
-    ```
+    ```bash
     python data/low_thrust/random_data_selection.py --NUM_TRANSFERS 2000
     ```
 2. You then have to manipulate that created dataset so that it is in the correct frame of reference for training:
-    ```
+    ```bash
     python data/low_thrust/data_manipulation.py --DATA_NAME transfer_statistics_2K.csv
     ```
     
 
 #### Train Models
 1. To train the models you must define in the code which dataset (file) you are wanting to train.  You can also modify the hyper-parameters. Then run the following:.
-    ```
+    ```bash
     python src/dnn/nn_training.py
     ```
 2. To evaluate the model performance you must define in the code both the dataset you trained on and the model that was saved after the training process. Then run the following::
-    ```
+    ```bash
     python src/random_forest/random_forest_training.py
     ```
 #### Evaluate Models Performance
 1. To train the models you must define in the code which dataset (file) you are wanting to train.  You can also modify the hyper-parameters. Then run the following::
-    ```
+    ```bash
     python src/dnn/nn_prediction.py
     ```
 2. To evaluate the model performance you must define in the code both the dataset you trained on and the model that was saved after the training process. Then run the following:
-    ```
+    ```bash
     python src/random_forest/random_forest_prediction.py
     ```
 Generated plots will be displayed interactively and model checkpoints will be saved in the **`/models`** directory.
