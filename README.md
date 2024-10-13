@@ -17,7 +17,6 @@
    - [Evaluation Metrics](#evaluation-metrics)
    - [Hyper-Parameter Tuning](#hyper-parameter-tuning)
 5. [Additional Notes](#additional-notes)
-6. [License](#license)
 
 ---
 
@@ -143,7 +142,7 @@ Example commands to generate data and run a model:
 #### Train Models
 1. To train the models you must define in the code which dataset (file) you are wanting to train.  You can also modify the hyper-parameters. Then run the following:.
     ```
-    python src/random_forest/nn_training.py
+    python src/dnn/nn_training.py
     ```
 2. To evaluate the model performance you must define in the code both the dataset you trained on and the model that was saved after the training process. Then run the following::
     ```
@@ -152,7 +151,7 @@ Example commands to generate data and run a model:
 #### Evaluate Models Performance
 1. To train the models you must define in the code which dataset (file) you are wanting to train.  You can also modify the hyper-parameters. Then run the following::
     ```
-    python src/random_forest/nn_prediction.py
+    python src/dnn/nn_prediction.py
     ```
 2. To evaluate the model performance you must define in the code both the dataset you trained on and the model that was saved after the training process. Then run the following:
     ```
@@ -177,7 +176,7 @@ The DNN model was trained to predict final spacecraft mass and transfer feasibil
 The primary metrics used to evaluate the model were:
 - **Mean Squared Error (MSE)**: For predicting final mass.
 - **Accuracy**: For classifying feasible and infeasible transfers.
-- **Mean Relative Error**: To assess generalization capabilities.
+- **Mean Percentage Absolute Error (MPAE)**: To assess the relative error of models.
 
 ### Hyper-Parameter Tuning
 Various hyper-parameters were explored, including the number of layers, learning rate, and batch size. Random search and WandB were used to track and compare different configurations. The final model was chosen based on a balance of performance and computational efficiency.
