@@ -21,7 +21,7 @@
 ---
 
 ## Overview
-This research compendium accompanies the University of Auckland Part IV Engineering Project carried our by Stephen Ng and Theo McIntosh: Project #55: Learning how to hop between space objects using low-thrust propulsion.  It focuses on developing a deep neural network (DNN) model to optimise low-thrust space transfers. It includes all the code, datasets, plots, and supplementary materials used throughout the research and experimentation process. The project was inspired by the Global Trajectory Optimisation Competition (GTOC) and aimed at computing the feasibility for low-thrust spacecraft trajectories using DNNs rather than solving optimal control problem (OCP), as this would reduce computational costs.
+This research compendium accompanies the University of Auckland Part IV Engineering Project carried our by Stephen Ng and Theo McIntosh: `Project #55: Learning how to hop between space objects using low-thrust propulsion`.  It focuses on developing a deep neural network (DNN) model to optimise low-thrust space transfers. It includes all the code, datasets, plots, and supplementary materials used throughout the research and experimentation process. The project was inspired by the Global Trajectory Optimisation Competition (GTOC) and aimed at computing the feasibility for low-thrust spacecraft trajectories using DNNs rather than solving optimal control problem (OCP), as this would reduce computational costs.
 
 The compendium includes:
 - Code for generating datasets, preprocessing, training neural networks and other machine learning models, and generating plots.
