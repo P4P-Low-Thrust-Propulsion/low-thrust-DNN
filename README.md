@@ -72,10 +72,10 @@ The compendium includes:
   - **`neural_network/`**
     - **`dv_estimate/`**: Plots showing delta-v estimates for spacecraft transfers predicted by the neural network model.
     - **`lambert/`**: Visualisations of Lambert transfer solutions compared to low-thrust transfer predictions.
-    - **`low_thrust/`**: Plots focusing on the performance of the neural network in predicting low-thrust trajectories, including comparisons with true trajectories.
+    - **`low_thrust/`**: Plots focusing on the performance of the neural network in predicting low-thrust masses, including comparisons with true values.
     - **`reachability_analysis/`**: Plots showing the reachability regions of low-thrust transfers, indicating feasible and infeasible transfer zones predicted by the neural network.
   - **`random_forest_regression/`**
-    - **`low_thrust/`**: Plots displaying the performance of the Random Forest model in predicting low-thrust transfers, including comparisons with actual trajectories.
+    - **`low_thrust/`**: Plots displaying the performance of the Random Forest model in predicting low-thrust masses, including comparisons with actual values.
     - **`reachability_analysis/`**: Visualisations of reachability analysis using the Random Forest model, showing regions of space reachable by low-thrust transfers.
 
 ### Documentation
