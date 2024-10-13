@@ -113,3 +113,5 @@ GitHub.sublime-settings
 !.vscode/extensions.json
 .history
 .DS_Store
+/src/models/saved_models/random_forest_model_200K.pkl
+/src/models/saved_models/random_forest_model_500K.pkl
