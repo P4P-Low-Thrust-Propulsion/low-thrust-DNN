@@ -21,7 +21,7 @@
 ---
 
 ## Overview
-This research compendium accompanies the Part IV project reports carried our by Stephen Ng and Theo McIntosh, on developing a deep neural network (DNN) model to optimise low-thrust space transfers. It includes all the code, datasets, plots, and supplementary materials used throughout the research and experimentation process. The project was inspired by the Global Trajectory Optimization Competition (GTOC) and aimed at computing the feasibility for low-thrust spacecraft trajectories using DNNs rather than solving optimal control problem (OCP), as this would reduce computational costs.
+This research compendium accompanies the University of Auckland Part IV Engineering Project carried our by Stephen Ng and Theo McIntosh: Project #55: Learning how to hop between space objects using low-thrust propulsion.  It focuses on developing a deep neural network (DNN) model to optimise low-thrust space transfers. It includes all the code, datasets, plots, and supplementary materials used throughout the research and experimentation process. The project was inspired by the Global Trajectory Optimisation Competition (GTOC) and aimed at computing the feasibility for low-thrust spacecraft trajectories using DNNs rather than solving optimal control problem (OCP), as this would reduce computational costs.
 
 The compendium includes:
 - Code for generating datasets, preprocessing, training neural networks and other machine learning models, and generating plots.
@@ -80,9 +80,9 @@ The compendium includes:
 
 ### Documentation
 - **`docs/`**: Contains additional documentation, such as:
-  - Experiment log: A detailed record of each experiment, including hyper-parameters, results, and observations.
-  - Calibration information: Details of any calibration or scaling applied to data.
-  - Configuration files used for setting up experiments (e.g., YAML files for WandB experiments).
+  - Future work: Details future work that could be done in this project.
+  - Experiment log (wandb files): A detailed record of each experiment, including hyper-parameters sweeps using wandb.  These are stored locally and are included in the **`.gitignore`** 
+  - Would contain configuration files used for setting up experiments (e.g., YAML files for WandB experiments).
 
 ---
 
@@ -164,19 +164,19 @@ Generated plots will be displayed interactively and model checkpoints will be sa
 ## Experiments and Procedures
 
 ### Data Generation
-Low-thrust transfer datasets were generated using numerical solutions to the OCP. These datasets consist of spacecraft positions, velocities, and mass at intermediate points during the transfer. The RTN (Radial, Transverse, Normal) reference frame was used for the analysis, and a total of 469 low-thrust transfers were computed.
+Low-thrust transfer datasets were generated using numerical solutions to the OCP. These datasets consist of spacecraft positions, velocities, and mass at intermediate points during the transfer. The RTN (Radial, Transverse, Normal) reference frame was used for the analysis, and a total of 469 low-thrust transfers were computed and then sampled to generate larger datasets to train on.
 
 ### Model Training
-The DNN model was trained to predict final spacecraft mass and transfer feasibility. The training process involved:
+The DNN model was trained to predict maximum initial and final mass of a spacecraft for a feasible low-thrust transfer. The training process involved:
 - Splitting data into training and testing sets.
-- Scaling and normalizing data for better model performance.
-- Using MSE as the loss function for regression tasks and accuracy for classification tasks.
+- Scaling and normalising data for better model performance.
+- Using MSE as the loss function
 
 ### Evaluation Metrics
 The primary metrics used to evaluate the model were:
-- **Mean Squared Error (MSE)**: For predicting final mass.
-- **Accuracy**: For classifying feasible and infeasible transfers.
-- **Mean Percentage Absolute Error (MPAE)**: To assess the relative error of models.
+- **Mean Squared Error (MSE)**
+- **R2**
+- **Mean Percentage Absolute Error (MPAE)**
 
 ### Hyper-Parameter Tuning
 Various hyper-parameters were explored, including the number of layers, learning rate, and batch size. Random search and WandB were used to track and compare different configurations. The final model was chosen based on a balance of performance and computational efficiency.
@@ -185,4 +185,4 @@ Various hyper-parameters were explored, including the number of layers, learning
 
 ## Additional Notes
 - The project focused on finding an alternative to the OCP problem using machine learning techniques but encountered challenges with high mass transfer predictions. This remains an area for future research.
-- Datasets and model architecture were inspired by previous GTOC challenges, with significant improvements in data preprocessing and training efficiency.
+- Datasets and model architecture were inspired by previous GTOC challenges.  However, a noval approach was taken, that was able to achieve the output of being able to determine feasibility and transfer cost via a single DNN.
